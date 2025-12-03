@@ -259,6 +259,6 @@ delay = 300 if len(text) < 10000 else 500
 
 ---
 
-**Fecha**: $(date +%Y-%m-%d)
+**Fecha**: 03-12-2025
 **Versión**: NanoEditor v3.0
 **Estado**: PRODUCCIÓN ✅
