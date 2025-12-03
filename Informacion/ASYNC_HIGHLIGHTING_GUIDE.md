@@ -265,4 +265,3 @@ El highlighting asíncrono es una mejora importante para archivos grandes:
 - ✅ **Efectivo**: Threading elimina lag completamente
 - ✅ **Escalable**: Funciona con archivos de cualquier tamaño
 
-**Recomendación**: Empezar con Fase 1 (debouncing), luego Fase 2 si es necesario.
