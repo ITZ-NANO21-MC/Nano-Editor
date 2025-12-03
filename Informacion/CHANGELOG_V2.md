@@ -122,14 +122,8 @@ Si usabas v1.0:
 - Los atajos de teclado son los mismos
 - Puedes seguir usando v1.0 con `./run.sh`
 - v2.0 es completamente compatible
-
-## 🙏 Feedback
-
-¿Encontraste un bug? ¿Tienes una sugerencia?
-Las mejoras de v2.0 están basadas en feedback de usuarios.
-
 ---
 
 **Versión:** 2.0.0  
-**Fecha:** Diciembre 2024  
+**Fecha:** Diciembre 2025  
 **Cambios:** +3 archivos nuevos, +500 líneas de código
