@@ -396,6 +396,6 @@ Con las correcciones implementadas, NanoEditor v3.0 es ahora un editor **confiab
 
 ---
 
-**Última actualización:** Diciembre 2024
+**Última actualización:** Diciembre 2025
 **Versión analizada:** NanoEditor v3.0 (Hardened Edition)
 **Estado:** Producción-Ready para uso personal ✅
