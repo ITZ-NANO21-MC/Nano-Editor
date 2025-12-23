@@ -3,7 +3,9 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import ttk
 import os
+import subprocess
 from typing import Optional
+from event_bus import event_bus, Events
 
 
 class VSCodeFileTree(ctk.CTkFrame):
@@ -293,20 +295,114 @@ class VSCodeFileTree(ctk.CTkFrame):
 
 # Sections at bottom
 class VSCodeSections(ctk.CTkFrame):
+    """Bottom sections for Explorer (Outline, Timeline)."""
     def __init__(self, master):
         super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
         
-        sections = [
-            ("▶ OUTLINE", None),
-            ("▶ TIMELINE", None)
-        ]
+        # Outline Section
+        self.outline_btn = ctk.CTkButton(
+            self, text="▶ OUTLINE", anchor="w",
+            fg_color="transparent", hover_color=("#E0E0E0", "#2A2D2E"),
+            font=("Segoe UI", 10, "bold"), corner_radius=0, height=25,
+            text_color=("#333333", "#CCCCCC"),
+            command=self.toggle_outline
+        )
+        self.outline_btn.pack(fill="x", padx=0, pady=0)
         
-        for text, cmd in sections:
-            btn = ctk.CTkButton(
-                self, text=text, anchor="w",
-                fg_color="transparent", hover_color=("#E0E0E0", "#2A2D2E"),
-                font=("Segoe UI", 10), corner_radius=0, height=30,
-                text_color=("#333333", "#CCCCCC"),
-                command=cmd
-            )
-            btn.pack(fill="x", padx=10, pady=2)
+        self.outline_content = ctk.CTkFrame(self, fg_color="transparent", height=0)
+        self.outline_content.pack(fill="x")
+        
+        # Timeline Section
+        self.timeline_btn = ctk.CTkButton(
+            self, text="▼ TIMELINE", anchor="w",
+            fg_color="transparent", hover_color=("#E0E0E0", "#2A2D2E"),
+            font=("Segoe UI", 10, "bold"), corner_radius=0, height=25,
+            text_color=("#333333", "#CCCCCC"),
+            command=self.toggle_timeline
+        )
+        self.timeline_btn.pack(fill="x", padx=0, pady=0)
+        
+        self.timeline_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.timeline_container.pack(fill="both", expand=True)
+        
+        self.timeline_list = tk.Listbox(
+            self.timeline_container,
+            bg=("#FFFFFF" if ctk.get_appearance_mode() == "Light" else "#252526"),
+            fg=("#333333" if ctk.get_appearance_mode() == "Light" else "#CCCCCC"),
+            font=("Segoe UI", 9),
+            borderwidth=0,
+            highlightthickness=0,
+            selectbackground=("#CCE8FF" if ctk.get_appearance_mode() == "Light" else "#094771"),
+            selectforeground=("#000000" if ctk.get_appearance_mode() == "Light" else "#FFFFFF")
+        )
+        self.timeline_list.pack(fill="both", expand=True, padx=10, pady=5)
+        
+        self.outline_expanded = False
+        self.timeline_expanded = True
+        
+        # Subscribe to tab changes
+        event_bus.subscribe(Events.TAB_CHANGED, self.update_timeline)
+        
+    def toggle_outline(self):
+        """Toggle outline section visibility."""
+        if self.outline_expanded:
+            self.outline_btn.configure(text="▶ OUTLINE")
+            self.outline_content.pack_forget()
+        else:
+            self.outline_btn.configure(text="▼ OUTLINE")
+            self.outline_content.pack(fill="x")
+        self.outline_expanded = not self.outline_expanded
+
+    def toggle_timeline(self):
+        """Toggle timeline section visibility."""
+        if self.timeline_expanded:
+            self.timeline_btn.configure(text="▶ TIMELINE")
+            self.timeline_container.pack_forget()
+        else:
+            self.timeline_btn.configure(text="▼ TIMELINE")
+            self.timeline_container.pack(fill="both", expand=True)
+        self.timeline_expanded = not self.timeline_expanded
+
+    def update_timeline(self, tab):
+        """
+        Updates the timeline list with git history for the current file.
+        
+        Args:
+            tab (EditorTab): The currently active tab object.
+        """
+        self.timeline_list.delete(0, tk.END)
+        
+        if not tab or not tab.file_path:
+            self.timeline_list.insert(tk.END, "No file selected")
+            return
+            
+        file_path = tab.file_path
+        if not os.path.exists(file_path):
+            self.timeline_list.insert(tk.END, "File not saved")
+            return
+
+        try:
+            # Check if it's a git repo
+            dir_path = os.path.dirname(file_path)
+            cmd = ["git", "-C", dir_path, "rev-parse", "--is-inside-work-tree"]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                self.timeline_list.insert(tk.END, "Not a git repository")
+                return
+                
+            # Get git log for the file
+            # Format: hash - relative_date : subject
+            log_format = "%h - %ar : %s"
+            cmd = ["git", "-C", dir_path, "log", "-n", "20", f"--pretty=format:{log_format}", "--", file_path]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0 and result.stdout:
+                lines = result.stdout.split('\n')
+                for line in lines:
+                    self.timeline_list.insert(tk.END, f" {line}")
+            else:
+                self.timeline_list.insert(tk.END, "No history found")
+                
+        except Exception as e:
+            self.timeline_list.insert(tk.END, f"Error: {str(e)}")

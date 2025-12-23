@@ -4,6 +4,7 @@ import tkinter
 from text_area import CodeEditor
 from line_numbers import LineNumbers
 from typing import Optional
+from event_bus import event_bus, Events
 
 
 class EditorTab:
@@ -167,6 +168,9 @@ class TabManager(customtkinter.CTkFrame):
                 btn.configure(fg_color=("gray75", "gray25"))
             else:
                 btn.configure(fg_color=("gray85", "gray15"))
+        
+        # Emit event
+        event_bus.emit(Events.TAB_CHANGED, tab)
     
     def close_tab(self, index: int) -> None:
         """Close tab at index."""
