@@ -1,11 +1,13 @@
 import customtkinter
 import tkinter
+from typing import Callable
 
 
 class GeminiPanel(customtkinter.CTkFrame):
-    def __init__(self, master, gemini_client, **kwargs):
+    def __init__(self, master, gemini_client, context_provider: Callable[[], str], **kwargs):
         super().__init__(master, **kwargs)
         self.gemini_client = gemini_client
+        self.context_provider = context_provider
         self.is_processing = False
 
         self.grid_rowconfigure(0, weight=1)
@@ -14,12 +16,21 @@ class GeminiPanel(customtkinter.CTkFrame):
         self.output_text = customtkinter.CTkTextbox(self, font=("monospace", 14))
         self.output_text.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
-        self.input_entry = customtkinter.CTkEntry(self, placeholder_text="Ask Gemini...")
-        self.input_entry.grid(row=1, column=0, sticky="ew")
+        # Input Frame
+        input_frame = customtkinter.CTkFrame(self)
+        input_frame.grid(row=1, column=0, columnspan=2, sticky="ew", padx=5, pady=5)
+        input_frame.grid_columnconfigure(0, weight=1)
+
+        self.input_entry = customtkinter.CTkEntry(input_frame, placeholder_text="Ask Gemini...")
+        self.input_entry.grid(row=0, column=0, sticky="ew")
         self.input_entry.bind("<Return>", lambda e: self.send_query())
 
-        self.send_button = customtkinter.CTkButton(self, text="Send", command=self.send_query)
-        self.send_button.grid(row=1, column=1, sticky="ew")
+        self.send_button = customtkinter.CTkButton(input_frame, text="Send", command=self.send_query, width=70)
+        self.send_button.grid(row=0, column=1, sticky="ew", padx=(5, 0))
+
+        self.context_checkbox = customtkinter.CTkCheckBox(self, text="Include Project Context", font=("Segoe UI", 12))
+        self.context_checkbox.grid(row=2, column=0, columnspan=2, sticky="w", padx=5, pady=(0, 5))
+
 
     def send_query(self):
         query = self.input_entry.get().strip()
@@ -35,13 +46,20 @@ class GeminiPanel(customtkinter.CTkFrame):
             self.send_button.configure(state="disabled", text="Sending...")
             self.input_entry.configure(state="disabled")
             
+            final_query = query
+            # Check if context should be included
+            if self.context_checkbox.get():
+                self.output_text.insert("1.0", "Gathering project context...\n")
+                project_context = self.context_provider()
+                final_query = f"{project_context}\n\nBased on the context above, answer the following question:\n\n{query}"
+            
             self.output_text.delete("1.0", "end")
             self.output_text.insert("1.0", f"You: {query}\n\n")
             self.output_text.insert("end", "Gemini: Thinking...\n")
             
             self.input_entry.delete(0, "end")
             
-            self.gemini_client.run_gemini(query, self.display_response)
+            self.gemini_client.run_gemini(final_query, self.display_response)
         except tkinter.TclError:
             self._reset_ui()
 

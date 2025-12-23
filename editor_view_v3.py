@@ -198,7 +198,11 @@ class App(ctk.CTk):
         
         # Gemini panel
         self.gemini_client = GeminiClient()
-        self.gemini_panel = GeminiPanel(content, self.gemini_client)
+        self.gemini_panel = GeminiPanel(
+            content,
+            self.gemini_client,
+            context_provider=self._get_project_context
+        )
         self.gemini_panel.grid(row=2, column=2, sticky="nsew", padx=5, pady=5)
         
         # Status bar
