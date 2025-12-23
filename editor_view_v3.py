@@ -551,13 +551,20 @@ Ctrl+Click - Goto Definition"""
         processed_result = process_ai_code_output(result)
         self._show_ai_result(title, processed_result, allow_insert)
 
-    def open_project_search(self):
+    def open_project_search(self, search_options=None):
+        """
+        Opens the project-wide search window.
+        
+        Args:
+            search_options (dict, optional): Initial search configuration containing 
+                'query', 'case_sensitive', 'whole_word', and 'use_regex'.
+        """
         tab = self.tab_manager.get_current_tab()
         if tab and tab.file_path:
             workspace = os.path.dirname(tab.file_path)
         else:
             workspace = os.getcwd()
-        ProjectSearchWindow(self, workspace, self.open_file_at_line).grab_set()
+        ProjectSearchWindow(self, workspace, self.open_file_at_line, search_options).grab_set()
 
     def open_file_at_line(self, file_path, line_num=1):
         self.open_file(file_path)

@@ -9,14 +9,23 @@ import threading
 class ProjectSearchWindow(customtkinter.CTkToplevel):
     """Window for searching text across project files."""
     
-    def __init__(self, master, workspace_path, open_file_callback):
+    def __init__(self, master, workspace_path, open_file_callback, initial_options=None):
+        """
+        Initializes the search window with optional predefined settings.
+        
+        Args:
+            master: Parent widget.
+            workspace_path (str): Path to the project root for searching.
+            open_file_callback (callable): Function to open a file at a specific line.
+            initial_options (dict, optional): Search parameters from sidebar.
+        """
         super().__init__(master)
         self.workspace_path = Path(workspace_path)
         self.open_file_callback = open_file_callback
         self.search_thread = None
         
         self.title("Search in Project")
-        self.geometry("700x500")
+        self.geometry("700x550")
         
         self.grid_columnconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=1)
@@ -52,6 +61,11 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
             options_frame, text="Whole word"
         )
         self.whole_word.pack(side="left", padx=5)
+
+        self.use_regex = customtkinter.CTkCheckBox(
+            options_frame, text="Use Regular Expression"
+        )
+        self.use_regex.pack(side="left", padx=5)
         
         # Results
         results_frame = customtkinter.CTkFrame(self)
@@ -70,9 +84,25 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
             self, text="Enter search term and press Search"
         )
         self.status_label.grid(row=2, column=0, sticky="w", padx=10, pady=(0, 10))
+
+        # Apply initial options if provided
+        if initial_options:
+            query = initial_options.get("query", "")
+            self.search_entry.insert(0, query)
+            
+            if initial_options.get("case_sensitive"):
+                self.case_sensitive.select()
+            if initial_options.get("whole_word"):
+                self.whole_word.select()
+            if initial_options.get("use_regex"):
+                self.use_regex.select()
+                
+            # Auto-start search
+            if query:
+                self.after(100, self.start_search)
     
     def start_search(self):
-        """Start search in background thread."""
+        """Starts the search process in a background thread to keep UI responsive."""
         query = self.search_entry.get().strip()
         if not query:
             return
@@ -89,18 +119,38 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
         self.search_thread.start()
     
     def search_in_files(self, query):
-        """Search for query in all project files."""
+        """
+        Iterates through project files and performs the search based on user filters.
+        
+        Args:
+            query (str): The text or pattern to search for.
+            
+        Returns:
+            list: A list of tuples (file_path, line_number, line_content).
+        """
         results = []
         case_sensitive = self.case_sensitive.get()
         whole_word = self.whole_word.get()
-        
-        search_query = query if case_sensitive else query.lower()
+        use_regex = self.use_regex.get()
         
         # File extensions to search
         extensions = {'.py', '.js', '.ts', '.java', '.cpp', '.c', '.go', '.rs', 
                      '.rb', '.php', '.html', '.css', '.txt', '.md', '.json', '.xml'}
         
+        import re
+        
         try:
+            # Prepare regex pattern if needed
+            if use_regex:
+                flags = 0 if case_sensitive else re.IGNORECASE
+                pattern_str = query
+                if whole_word:
+                    pattern_str = r'\b' + pattern_str + r'\b'
+                pattern = re.compile(pattern_str, flags)
+            elif whole_word:
+                flags = 0 if case_sensitive else re.IGNORECASE
+                pattern = re.compile(r'\b' + re.escape(query) + r'\b', flags)
+            
             for root, dirs, files in os.walk(self.workspace_path):
                 # Skip common directories
                 dirs[:] = [d for d in dirs if d not in {'.git', '__pycache__', 'node_modules', 'venv', 'env'}]
@@ -111,20 +161,23 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
                         try:
                             with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
                                 for line_num, line in enumerate(f, 1):
-                                    search_line = line if case_sensitive else line.lower()
+                                    match_found = False
                                     
-                                    if whole_word:
-                                        import re
-                                        pattern = r'\b' + re.escape(search_query) + r'\b'
-                                        if re.search(pattern, search_line):
-                                            results.append((file_path, line_num, line.rstrip()))
+                                    if use_regex or whole_word:
+                                        if pattern.search(line):
+                                            match_found = True
                                     else:
+                                        search_line = line if case_sensitive else line.lower()
+                                        search_query = query if case_sensitive else query.lower()
                                         if search_query in search_line:
-                                            results.append((file_path, line_num, line.rstrip()))
+                                            match_found = True
+                                            
+                                    if match_found:
+                                        results.append((file_path, line_num, line.rstrip()))
                         except Exception:
                             continue
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Search error: {e}")
         
         return results
     

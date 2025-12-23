@@ -1,5 +1,6 @@
 """VS Code style sidebar with activity bar."""
 import customtkinter as ctk
+import tkinter as tk
 
 
 class VSCodeSidebar(ctk.CTkFrame):
@@ -150,20 +151,45 @@ class SearchPanel(ctk.CTkFrame):
         )
         self.replace_entry.pack(fill="x", pady=5)
         
+        # Options variables
+        self.match_case_var = tk.BooleanVar(value=False)
+        self.match_word_var = tk.BooleanVar(value=False)
+        self.use_regex_var = tk.BooleanVar(value=False)
+        
         # Options
         options = ctk.CTkFrame(self, fg_color="transparent")
         options.pack(fill="x", padx=10)
         
-        ctk.CTkCheckBox(options, text="Match Case", font=("Segoe UI", 10)).pack(anchor="w")
-        ctk.CTkCheckBox(options, text="Match Whole Word", font=("Segoe UI", 10)).pack(anchor="w")
-        ctk.CTkCheckBox(options, text="Use Regular Expression", font=("Segoe UI", 10)).pack(anchor="w")
+        ctk.CTkCheckBox(options, text="Match Case", font=("Segoe UI", 10), variable=self.match_case_var).pack(anchor="w")
+        ctk.CTkCheckBox(options, text="Match Whole Word", font=("Segoe UI", 10), variable=self.match_word_var).pack(anchor="w")
+        ctk.CTkCheckBox(options, text="Use Regular Expression", font=("Segoe UI", 10), variable=self.use_regex_var).pack(anchor="w")
         
         # Search button
         ctk.CTkButton(
             self, text="Search in Files",
-            command=lambda: app.open_project_search(),
+            command=self.perform_sidebar_search,
             height=32, font=("Segoe UI", 11)
         ).pack(fill="x", padx=10, pady=10)
+
+    def perform_sidebar_search(self):
+        """
+        Gathers search terms and options from the sidebar and opens the global search window.
+        
+        This method extracts the query from the search entry and the state of the 
+        configuration checkboxes (case sensitivity, whole word, regex) to initiate
+        a project-wide search.
+        """
+        query = self.search_entry.get()
+        if not query:
+            return
+            
+        options = {
+            "query": query,
+            "case_sensitive": self.match_case_var.get(),
+            "whole_word": self.match_word_var.get(),
+            "use_regex": self.use_regex_var.get()
+        }
+        self.app.open_project_search(options)
 
 
 class SourceControlPanel(ctk.CTkFrame):
