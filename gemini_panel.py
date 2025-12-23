@@ -1,6 +1,8 @@
 import customtkinter
+import customtkinter
 import tkinter
 from typing import Callable
+from ai_utils import process_ai_code_output
 
 
 class GeminiPanel(customtkinter.CTkFrame):
@@ -82,7 +84,8 @@ class GeminiPanel(customtkinter.CTkFrame):
                 new_content = "\n".join([line for line in lines if "Thinking..." not in line])
                 self.output_text.insert("1.0", new_content)
             
-            self.output_text.insert("end", f"Gemini: {response}\n")
+            processed_response = process_ai_code_output(response)
+            self.output_text.insert("end", f"Gemini: {processed_response}\n")
         except tkinter.TclError:
             pass
         finally:

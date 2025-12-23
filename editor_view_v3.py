@@ -16,7 +16,7 @@ from ai_menu import AIActionDialog, AIResultDialog
 from ai_file_operations import AIFileOperations
 from project_search import ProjectSearchWindow
 from goto_definition import GotoDefinition, setup_goto_definition_bindings
-from project_context import ProjectContext
+from ai_utils import process_ai_code_output
 import os
 import shlex
 import shutil
@@ -544,11 +544,12 @@ Ctrl+Click - Goto Definition"""
     def _show_ai_result(self, title: str, result: str, allow_insert: bool = True) -> None:
         insert_callback = self._insert_text_at_cursor if allow_insert else None
         AIResultDialog(self, title, result, insert_callback).grab_set()
-
+    
     def _handle_ai_result(self, title: str, result: str, allow_insert: bool, progress) -> None:
         progress.stop()
         self.feedback.show_success("AI completed")
-        self._show_ai_result(title, result, allow_insert)
+        processed_result = process_ai_code_output(result)
+        self._show_ai_result(title, processed_result, allow_insert)
 
     def open_project_search(self):
         tab = self.tab_manager.get_current_tab()
@@ -742,7 +743,7 @@ Ctrl+Click - Goto Definition"""
             "Describe the function to add:",
             on_description
         ).grab_set()
-
+    
     def _handle_file_modification(self, result: str) -> None:
         messagebox.showinfo("AI File Modification", result)
         tab = self.tab_manager.get_current_tab()
@@ -753,3 +754,4 @@ Ctrl+Click - Goto Definition"""
 if __name__ == "__main__":
     app = App()
     app.mainloop()
+

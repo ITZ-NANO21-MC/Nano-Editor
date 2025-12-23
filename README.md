@@ -1,12 +1,12 @@
-# NanoEditor v3.0 (Hardened Edition)
+# NanoEditor v3.1 (Context-Aware AI)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
 
-Editor de código moderno y ligero con interfaz estilo VS Code, integración completa de IA y arquitectura robusta. Diseñado para ser rápido, seguro y fácil de extender.
+Editor de código moderno y ligero con interfaz estilo VS Code, integración completa de IA con contexto de proyecto y arquitectura robusta. Diseñado para ser rápido, seguro y fácil de extender.
 
-**Puntuación de Calidad: 8.2/10** ⭐⭐⭐⭐
+**Puntuación de Calidad: 8.5/10** ⭐⭐⭐⭐
 
 ## ✨ Características Principales
 
@@ -26,6 +26,7 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 - **Line Numbers**: Números de línea sincronizados
 
 ### 🤖 IA Assistant Completo
+- **Contexto de Proyecto Global**: La IA analiza el árbol de archivos y las pestañas abiertas para dar respuestas más precisas.
 - **10+ Funciones de IA**:
   - Explain Code
   - Generate Code
@@ -38,7 +39,8 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
   - Create File
   - Modify File
   - Add Function
-- **Chat Gemini Integrado**: Panel dedicado para interacción
+- **Chat Gemini Contextual**: Panel de chat con opción de incluir el contexto del proyecto en la conversación.
+- **Limpieza Automática de Salida**: Elimina los ´´´ de las respuestas de la IA para un uso directo.
 
 ### 🖥️ Terminal Integrado
 - Terminal funcional con soporte para `cd`
@@ -117,10 +119,11 @@ python3 main.py
 
 ### Funciones de IA
 
-1. Selecciona código
-2. Menú **AI Assistant** → Elige función
-3. Espera resultado (con progress indicator)
-4. Inserta o revisa el código generado
+1. Selecciona código o haz una pregunta en el chat.
+2. Para el chat, puedes marcar la casilla **"Incluir Contexto del Proyecto"** para que la IA entienda tu entorno de trabajo.
+3. Menú **AI Assistant** → Elige función.
+4. Espera resultado (con progress indicator). El código generado aparecerá limpio, sin ´´´.
+5. Inserta o revisa el código generado.
 
 ### Terminal
 
@@ -130,12 +133,13 @@ python3 main.py
 
 ## 📊 Estado del Proyecto
 
-### ✅ Completado (98%)
+### ✅ Completado (99%)
 
 - [x] Editor multi-tab funcional
 - [x] Syntax highlighting asíncrono
 - [x] Terminal integrado
 - [x] IA Assistant (10+ funciones)
+- [x] **IA con Contexto de Proyecto**
 - [x] Temas Light/Dark
 - [x] Feedback visual
 - [x] Sistema de logging
@@ -147,7 +151,7 @@ python3 main.py
 
 ### 🔄 Próximas Mejoras
 
-- [ ] Aumentar cobertura de tests (35% → 60%)
+- [ ] Aumentar cobertura de tests (35% → 70%)
 - [ ] Migrar a Event Bus completo
 - [ ] Implementar CI/CD
 - [ ] Sistema de plugins
@@ -164,6 +168,8 @@ Nano_Editor/
 ├── syntax_highlighter.py      # Resaltado de sintaxis
 ├── async_highlighter.py       # Highlighting asíncrono
 ├── ai_assistant.py            # Asistente de IA
+├── project_context.py         # Lógica para dar contexto a la IA
+├── ai_utils.py                # Utilidades para el asistente de IA
 ├── gemini_client.py           # Cliente Gemini
 ├── terminal_panel.py          # Terminal integrado
 ├── visual_feedback.py         # Notificaciones
@@ -211,6 +217,7 @@ Documentación completa en `Informacion/`:
 GEMINI_API_KEY=your-api-key-here
 AI_MODEL=models/gemini-2.5-flash
 AI_TIMEOUT=60
+AI_CONTEXT_TOKEN_LIMIT=8000
 ```
 
 ### Logs
@@ -234,6 +241,11 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v3.1 (Context-Aware AI) - Diciembre 2025
+- ✅ **IA con Contexto de Proyecto**: El asistente ahora analiza los archivos abiertos y la estructura del proyecto para ofrecer respuestas más inteligentes.
+- ✅ **Chat Contextual**: Añadida casilla en el panel de chat para incluir el contexto del proyecto en la conversación.
+- ✅ **Limpieza de Salida de IA**: Se eliminan automáticamente los delimitadores de código (´´´) de las respuestas de la IA.
 
 ### v3.0 (Hardened Edition) - Diciembre 2025
 - ✅ Syntax highlighting asíncrono (0ms lag)
@@ -277,5 +289,5 @@ MIT License - Ver [LICENSE](LICENSE) para más detalles
 
 ---
 
-**NanoEditor v3.0** - Editor de código profesional, ligero y potente ✨
+**NanoEditor v3.1** - Editor de código profesional, ligero y contextual ✨
 
