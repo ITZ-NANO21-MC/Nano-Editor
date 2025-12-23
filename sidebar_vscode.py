@@ -274,7 +274,7 @@ class ExtensionsPanel(ctk.CTkFrame):
 
 
 class SettingsPanel(ctk.CTkFrame):
-    """Settings panel."""
+    """Settings panel for editor configuration."""
     def __init__(self, master, app):
         super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
         self.app = app
@@ -288,6 +288,11 @@ class SettingsPanel(ctk.CTkFrame):
             font=("Segoe UI", 11, "bold"),
             text_color=("#383838", "#CCCCCC")
         ).pack(side="left", padx=10, pady=8)
+        
+        # Control variables
+        self.show_terminal_var = tk.BooleanVar(value=True)
+        self.show_ai_var = tk.BooleanVar(value=True)
+        self.font_size_var = tk.IntVar(value=13)
         
         # Settings options
         settings_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
@@ -310,9 +315,53 @@ class SettingsPanel(ctk.CTkFrame):
         
         # Font size
         ctk.CTkLabel(settings_frame, text="Font Size", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        ctk.CTkSlider(settings_frame, from_=10, to=24).pack(fill="x", pady=5)
+        self.font_slider = ctk.CTkSlider(
+            settings_frame, from_=8, to=30,
+            variable=self.font_size_var,
+            command=self.update_font
+        )
+        self.font_slider.pack(fill="x", pady=5)
         
-        # Terminal
+        # Panels visibility
         ctk.CTkLabel(settings_frame, text="Panels", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        ctk.CTkCheckBox(settings_frame, text="Show Terminal").pack(anchor="w", pady=2)
-        ctk.CTkCheckBox(settings_frame, text="Show AI Panel").pack(anchor="w", pady=2)
+        
+        self.terminal_cb = ctk.CTkCheckBox(
+            settings_frame, text="Show Terminal",
+            variable=self.show_terminal_var,
+            command=self.update_panels
+        )
+        self.terminal_cb.pack(anchor="w", pady=2)
+        
+        self.ai_cb = ctk.CTkCheckBox(
+            settings_frame, text="Show AI Panel",
+            variable=self.show_ai_var,
+            command=self.update_panels
+        )
+        self.ai_cb.pack(anchor="w", pady=2)
+
+    def update_panels(self):
+        """
+        Updates the visibility of terminal and AI panels based on checkbox states.
+        """
+        show_terminal = self.show_terminal_var.get()
+        show_ai = self.show_ai_var.get()
+        
+        if show_terminal:
+            self.app.terminal.grid()
+        else:
+            self.app.terminal.grid_remove()
+            
+        if show_ai:
+            self.app.gemini_panel.grid()
+        else:
+            self.app.gemini_panel.grid_remove()
+
+    def update_font(self, value):
+        """
+        Updates the editor font size in real-time.
+        
+        Args:
+            value (float): The new font size from the slider.
+        """
+        size = int(value)
+        self.app.update_font_size(size)

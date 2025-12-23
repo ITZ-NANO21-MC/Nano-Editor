@@ -348,6 +348,17 @@ class App(ctk.CTk):
         if hasattr(self, 'file_tree'):
             self.file_tree.update_tree_theme()
 
+    def update_font_size(self, size):
+        """
+        Updates the font size of the editor text area and synchronizes line numbers.
+        
+        Args:
+            size (int): The new font size in pixels.
+        """
+        self.tab_manager.text_area.configure(font=("monospace", size))
+        if self.tab_manager.line_numbers:
+            self.tab_manager.line_numbers.redraw()
+
     def open_file(self, file_path=None):
         if not file_path:
             file_path = filedialog.askopenfilename()
