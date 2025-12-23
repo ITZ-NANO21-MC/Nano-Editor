@@ -16,6 +16,7 @@ from ai_menu import AIActionDialog, AIResultDialog
 from ai_file_operations import AIFileOperations
 from project_search import ProjectSearchWindow
 from goto_definition import GotoDefinition, setup_goto_definition_bindings
+from project_context import ProjectContext
 import os
 import shlex
 import shutil
@@ -518,6 +519,12 @@ F12 - Goto Definition
 Ctrl+Click - Goto Definition"""
         messagebox.showinfo("Shortcuts", shortcuts)
 
+    def _get_project_context(self) -> str:
+        """Gathers and returns the project context string."""
+        project_root = os.getcwd()  # Or determine from file_tree
+        context_builder = ProjectContext(self.tab_manager, self.file_tree, project_root)
+        return context_builder.gather_context_for_ai()
+
     def _get_selected_text(self) -> str:
         try:
             return self.tab_manager.text_area.get("sel.first", "sel.last")
@@ -533,7 +540,7 @@ Ctrl+Click - Goto Definition"""
     def _show_ai_result(self, title: str, result: str, allow_insert: bool = True) -> None:
         insert_callback = self._insert_text_at_cursor if allow_insert else None
         AIResultDialog(self, title, result, insert_callback).grab_set()
-    
+
     def _handle_ai_result(self, title: str, result: str, allow_insert: bool, progress) -> None:
         progress.stop()
         self.feedback.show_success("AI completed")
@@ -572,7 +579,7 @@ Ctrl+Click - Goto Definition"""
             messagebox.showinfo("References", result)
         else:
             messagebox.showinfo("References", "No references found")
-    
+
     def _detect_language(self) -> str:
         tab = self.tab_manager.get_current_tab()
         if not tab or not tab.file_path:
@@ -580,74 +587,108 @@ Ctrl+Click - Goto Definition"""
         ext_map = {".py": "Python", ".js": "JavaScript", ".java": "Java", ".cpp": "C++", ".go": "Go"}
         ext = os.path.splitext(tab.file_path)[1]
         return ext_map.get(ext, "Python")
-    
+
     def ai_explain_code(self) -> None:
         code = self._get_selected_text()
         if not code or not code.strip():
             messagebox.showwarning("No Code", "Select code to explain")
             return
         
-        # Validate code length
         if len(code) > 50000:
             messagebox.showwarning("Code Too Long", "Selected code is too long (max 50K chars)")
             return
         
+        context = self._get_project_context()
         self.status_bar.set_file_path("AI: Explaining...")
         progress = self.feedback.show_progress("AI analyzing code...")
-        self.ai_assistant.explain_code(code, lambda r: self._handle_ai_result("Explanation", r, False, progress))
-    
+        self.ai_assistant.explain_code(
+            code,
+            lambda r: self._handle_ai_result("Explanation", r, False, progress),
+            project_context=context
+        )
+
     def ai_generate_code(self) -> None:
+        context = self._get_project_context()
         def on_desc(desc: str) -> None:
             lang = self._detect_language()
             self.status_bar.set_file_path("AI: Generating...")
-            self.ai_assistant.generate_code(desc, lang, lambda r: self._show_ai_result("Generated", r))
+            self.ai_assistant.generate_code(
+                desc, lang,
+                lambda r: self._show_ai_result("Generated", r),
+                project_context=context
+            )
         AIActionDialog(self, "Generate Code", "Describe code:", on_desc).grab_set()
-    
+
     def ai_refactor_code(self) -> None:
         code = self._get_selected_text()
         if not code.strip():
             messagebox.showwarning("No Code", "Select code to refactor")
             return
+        context = self._get_project_context()
         self.status_bar.set_file_path("AI: Refactoring...")
-        self.ai_assistant.refactor_code(code, lambda r: self._show_ai_result("Refactored", r))
-    
+        self.ai_assistant.refactor_code(
+            code,
+            lambda r: self._show_ai_result("Refactored", r),
+            project_context=context
+        )
+
     def ai_fix_errors(self) -> None:
         code = self._get_selected_text()
         if not code.strip():
             messagebox.showwarning("No Code", "Select code to fix")
             return
+        context = self._get_project_context()
         def on_err(err: str) -> None:
             self.status_bar.set_file_path("AI: Fixing...")
-            self.ai_assistant.fix_errors(code, err, lambda r: self._show_ai_result("Fixed", r))
+            self.ai_assistant.fix_errors(
+                code, err,
+                lambda r: self._show_ai_result("Fixed", r),
+                project_context=context
+            )
         AIActionDialog(self, "Fix Errors", "Error message:", on_err).grab_set()
-    
+
     def ai_optimize_code(self) -> None:
         code = self._get_selected_text()
         if not code.strip():
             messagebox.showwarning("No Code", "Select code to optimize")
             return
+        context = self._get_project_context()
         self.status_bar.set_file_path("AI: Optimizing...")
-        self.ai_assistant.optimize_code(code, lambda r: self._show_ai_result("Optimizations", r, False))
-    
+        self.ai_assistant.optimize_code(
+            code,
+            lambda r: self._show_ai_result("Optimizations", r, False),
+            project_context=context
+        )
+
     def ai_generate_docstring(self) -> None:
         code = self._get_selected_text()
         if not code.strip():
             messagebox.showwarning("No Code", "Select function/class")
             return
+        context = self._get_project_context()
         self.status_bar.set_file_path("AI: Documenting...")
-        self.ai_assistant.generate_docstring(code, lambda r: self._show_ai_result("Docstring", r))
-    
+        self.ai_assistant.generate_docstring(
+            code,
+            lambda r: self._show_ai_result("Docstring", r),
+            project_context=context
+        )
+
     def ai_translate_code(self) -> None:
         code = self._get_selected_text()
         if not code.strip():
             messagebox.showwarning("No Code", "Select code to translate")
             return
+        context = self._get_project_context()
         def on_lang(lang: str) -> None:
             from_lang = self._detect_language()
             self.status_bar.set_file_path(f"AI: Translating to {lang}...")
-            self.ai_assistant.translate_code(code, from_lang, lang, lambda r: self._show_ai_result("Translated", r))
+            self.ai_assistant.translate_code(
+                code, from_lang, lang,
+                lambda r: self._show_ai_result("Translated", r),
+                project_context=context
+            )
         AIActionDialog(self, "Translate", "Target language:", on_lang).grab_set()
-    
+
     def ai_create_file(self) -> None:
         def on_input(text: str) -> None:
             lines = text.strip().split('\n', 1)
@@ -663,7 +704,7 @@ Ctrl+Click - Goto Definition"""
             "Line 1: filename.py\nLine 2: Description of what the file should do",
             on_input
         ).grab_set()
-    
+
     def ai_modify_current_file(self) -> None:
         tab = self.tab_manager.get_current_tab()
         if not tab or not tab.file_path:
@@ -680,7 +721,7 @@ Ctrl+Click - Goto Definition"""
             "Describe what changes to make:",
             on_instruction
         ).grab_set()
-    
+
     def ai_add_function(self) -> None:
         tab = self.tab_manager.get_current_tab()
         if not tab or not tab.file_path:
@@ -697,7 +738,7 @@ Ctrl+Click - Goto Definition"""
             "Describe the function to add:",
             on_description
         ).grab_set()
-    
+
     def _handle_file_modification(self, result: str) -> None:
         messagebox.showinfo("AI File Modification", result)
         tab = self.tab_manager.get_current_tab()
