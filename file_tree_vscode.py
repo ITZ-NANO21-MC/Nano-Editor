@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import ttk
 import os
 import subprocess
+import ast
+import re
 from typing import Optional
 from event_bus import event_bus, Events
 
@@ -296,12 +298,13 @@ class VSCodeFileTree(ctk.CTkFrame):
 # Sections at bottom
 class VSCodeSections(ctk.CTkFrame):
     """Bottom sections for Explorer (Outline, Timeline)."""
-    def __init__(self, master):
+    def __init__(self, master, app):
         super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
+        self.app = app
         
         # Outline Section
         self.outline_btn = ctk.CTkButton(
-            self, text="▶ OUTLINE", anchor="w",
+            self, text="▼ OUTLINE", anchor="w",
             fg_color="transparent", hover_color=("#E0E0E0", "#2A2D2E"),
             font=("Segoe UI", 10, "bold"), corner_radius=0, height=25,
             text_color=("#333333", "#CCCCCC"),
@@ -309,8 +312,16 @@ class VSCodeSections(ctk.CTkFrame):
         )
         self.outline_btn.pack(fill="x", padx=0, pady=0)
         
-        self.outline_content = ctk.CTkFrame(self, fg_color="transparent", height=0)
-        self.outline_content.pack(fill="x")
+        self.outline_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.outline_container.pack(fill="both", expand=True)
+        
+        self.outline_tree = ttk.Treeview(
+            self.outline_container,
+            show="tree",
+            selectmode="browse",
+            style="VSCode.Treeview"
+        )
+        self.outline_tree.pack(fill="both", expand=True, padx=5, pady=2)
         
         # Timeline Section
         self.timeline_btn = ctk.CTkButton(
@@ -337,20 +348,23 @@ class VSCodeSections(ctk.CTkFrame):
         )
         self.timeline_list.pack(fill="both", expand=True, padx=10, pady=5)
         
-        self.outline_expanded = False
+        self.outline_expanded = True
         self.timeline_expanded = True
         
+        # Bindings
+        self.outline_tree.bind("<Double-1>", self.on_outline_click)
+        
         # Subscribe to tab changes
-        event_bus.subscribe(Events.TAB_CHANGED, self.update_timeline)
+        event_bus.subscribe(Events.TAB_CHANGED, self.on_tab_changed)
         
     def toggle_outline(self):
         """Toggle outline section visibility."""
         if self.outline_expanded:
             self.outline_btn.configure(text="▶ OUTLINE")
-            self.outline_content.pack_forget()
+            self.outline_container.pack_forget()
         else:
             self.outline_btn.configure(text="▼ OUTLINE")
-            self.outline_content.pack(fill="x")
+            self.outline_container.pack(fill="both", expand=True)
         self.outline_expanded = not self.outline_expanded
 
     def toggle_timeline(self):
@@ -363,35 +377,131 @@ class VSCodeSections(ctk.CTkFrame):
             self.timeline_container.pack(fill="both", expand=True)
         self.timeline_expanded = not self.timeline_expanded
 
+    def on_tab_changed(self, tab):
+        """Handle tab change by updating both Outline and Timeline."""
+        self.update_outline(tab)
+        self.update_timeline(tab)
+
+    def update_outline(self, tab):
+        """
+        Analiza el contenido del archivo según su extensión para generar el esquema.
+        Soporta Python (AST), JavaScript, HTML y CSS (Regex).
+        """
+        self.outline_tree.delete(*self.outline_tree.get_children())
+        
+        if not tab or not tab.file_path:
+            return
+
+        content = self.app.tab_manager.text_area.get("1.0", "end-1c")
+        ext = os.path.splitext(tab.file_path)[1].lower()
+        
+        if ext == ".py":
+            self._parse_python(content)
+        elif ext in [".js", ".ts"]:
+            self._parse_javascript(content)
+        elif ext in [".html", ".htm"]:
+            self._parse_html(content)
+        elif ext == ".css":
+            self._parse_css(content)
+        elif ext in [".c", ".cpp", ".cc", ".h", ".hpp"]:
+            self._parse_cpp(content)
+
+    def _parse_python(self, content):
+        """Usa AST para un análisis preciso de Python."""
+        try:
+            tree = ast.parse(content)
+            for node in ast.iter_child_nodes(tree):
+                if isinstance(node, ast.ClassDef):
+                    class_id = self.outline_tree.insert("", "end", text=f"  {{}} {node.name}", values=[node.lineno], open=True)
+                    for subnode in node.body:
+                        if isinstance(subnode, ast.FunctionDef):
+                            self.outline_tree.insert(class_id, "end", text=f"  ƒ {subnode.name}", values=[subnode.lineno])
+                elif isinstance(node, ast.FunctionDef):
+                    self.outline_tree.insert("", "end", text=f"  ƒ {node.name}", values=[node.lineno])
+        except SyntaxError: pass
+
+    def _parse_javascript(self, content):
+        """Usa Regex para encontrar clases y funciones en JS."""
+        patterns = [
+            (r'class\s+([a-zA-Z0-9_$]+)', "  {} "),   # Clases
+            (r'function\s+([a-zA-Z0-9_$]+)', "  ƒ "),  # Funciones normales
+            (r'(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*\(.*?\)\s*=>', "  λ ") # Arrow functions
+        ]
+        self._apply_regex_outline(content, patterns)
+
+    def _parse_html(self, content):
+        """Usa Regex para encontrar IDs y etiquetas importantes en HTML."""
+        patterns = [
+            (r'<([a-zA-Z0-9]+)\s+[^>]*id=["\']([^"\']+)["\']', "  # "), # Elementos con ID
+            (r'<(h[1-6])(?:\s+[^>]*)?>(.*?)</h[1-6]>', "  H ")          # Encabezados
+        ]
+        # Custom logic for HTML due to multiple groups
+        lines = content.split('\n')
+        for i, line in enumerate(lines, 1):
+            for pattern, icon in patterns:
+                match = re.search(pattern, line)
+                if match:
+                    name = match.group(2) if len(match.groups()) >= 2 else match.group(1)
+                    self.outline_tree.insert("", "end", text=f"{icon}{name[:20]}", values=[i])
+
+    def _parse_css(self, content):
+        """Usa Regex para encontrar selectores en CSS."""
+        # Busca selectores antes de una llave de apertura
+        pattern = r'([.#a-zA-Z][^{]*)\s*\{'
+        lines = content.split('\n')
+        for i, line in enumerate(lines, 1):
+            match = re.search(pattern, line)
+            if match:
+                selector = match.group(1).strip()
+                if selector and not selector.startswith("@"):
+                    self.outline_tree.insert("", "end", text=f"  § {selector[:25]}", values=[i])
+
+    def _parse_cpp(self, content):
+        """Usa Regex para encontrar símbolos en C/C++."""
+        patterns = [
+            (r'(?:class|struct)\s+([a-zA-Z0-9_$]+)\s*(?::\s*[^{]*)?\{', "  {} "), # Clases y Structs
+            (r'namespace\s+([a-zA-Z0-9_$]+)\s*\{', "  ⬢ "),                       # Namespaces
+            (r'^\s*#\s*define\s+([a-zA-Z0-9_$]+)', "  # "),                      # Macros
+            # Funciones y Métodos: Tipo Nombre(Args)
+            (r'(?:[\w:]+\s+)+([\w:]+)\s*\([^)]*\)\s*(?:const)?\s*\{', "  ƒ ")
+        ]
+        self._apply_regex_outline(content, patterns)
+
+    def _apply_regex_outline(self, content, patterns):
+        """Aplica patrones regex línea por línea para generar el esquema."""
+        lines = content.split('\n')
+        for i, line in enumerate(lines, 1):
+            for pattern, icon in patterns:
+                match = re.search(pattern, line)
+                if match:
+                    self.outline_tree.insert("", "end", text=f"{icon}{match.group(1)}", values=[i])
+
+    def on_outline_click(self, event):
+        """Handles double-click on outline items to navigate to the code line."""
+        item = self.outline_tree.focus()
+        if item:
+            values = self.outline_tree.item(item, "values")
+            if values:
+                line_num = int(values[0])
+                self.app.open_file_at_line(self.app.tab_manager.get_current_tab().file_path, line_num)
+
     def update_timeline(self, tab):
         """
         Updates the timeline list with git history for the current file.
-        
-        Args:
-            tab (EditorTab): The currently active tab object.
         """
         self.timeline_list.delete(0, tk.END)
         
         if not tab or not tab.file_path:
-            self.timeline_list.insert(tk.END, "No file selected")
+            self.timeline_list.insert(tk.END, " No file selected")
             return
             
         file_path = tab.file_path
         if not os.path.exists(file_path):
-            self.timeline_list.insert(tk.END, "File not saved")
+            self.timeline_list.insert(tk.END, " File not saved")
             return
 
         try:
-            # Check if it's a git repo
             dir_path = os.path.dirname(file_path)
-            cmd = ["git", "-C", dir_path, "rev-parse", "--is-inside-work-tree"]
-            result = subprocess.run(cmd, capture_output=True, text=True)
-            
-            if result.returncode != 0:
-                self.timeline_list.insert(tk.END, "Not a git repository")
-                return
-                
-            # Get git log for the file
             # Format: hash - relative_date : subject
             log_format = "%h - %ar : %s"
             cmd = ["git", "-C", dir_path, "log", "-n", "20", f"--pretty=format:{log_format}", "--", file_path]
@@ -402,7 +512,6 @@ class VSCodeSections(ctk.CTkFrame):
                 for line in lines:
                     self.timeline_list.insert(tk.END, f" {line}")
             else:
-                self.timeline_list.insert(tk.END, "No history found")
-                
-        except Exception as e:
-            self.timeline_list.insert(tk.END, f"Error: {str(e)}")
+                self.timeline_list.insert(tk.END, " No history found")
+        except Exception:
+            self.timeline_list.insert(tk.END, " History unavailable")

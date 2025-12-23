@@ -174,7 +174,7 @@ class App(ctk.CTk):
         self.file_tree = VSCodeFileTree(self.explorer_panel, self)
         self.file_tree.grid(row=0, column=0, sticky="nsew")
         
-        self.sections = VSCodeSections(self.explorer_panel)
+        self.sections = VSCodeSections(self.explorer_panel, self)
         self.sections.grid(row=1, column=0, sticky="ew")
         
         self.search_panel = SearchPanel(self.panel_container, self)
