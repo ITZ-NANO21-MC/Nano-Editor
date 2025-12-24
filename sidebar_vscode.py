@@ -1,6 +1,7 @@
 """VS Code style sidebar with activity bar."""
 import customtkinter as ctk
 import tkinter as tk
+from tkfontawesome import icon_to_image
 
 
 class VSCodeSidebar(ctk.CTkFrame):
@@ -10,33 +11,34 @@ class VSCodeSidebar(ctk.CTkFrame):
         self.app = app
         self.current_view = "explorer"
         
+        # Icon cache to prevent garbage collection
+        self.icons = {}
+        self._create_icons()
+        
         # Activity buttons
         self.buttons = {}
         
         activities = [
-            ("📁", "explorer", "Explorer (Ctrl+Shift+E)"),
-            ("🔍", "search", "Search (Ctrl+Shift+F)"),
-            ("🔀", "source", "Source Control (Ctrl+Shift+G)"),
-            ("▶", "run", "Run and Debug (Ctrl+Shift+D)"),
-            ("🤖", "ai", "AI Assistant (Ctrl+Shift+A)"),
-            ("⚙", "extensions", "Extensions (Ctrl+Shift+X)"),
+            ("copy", "explorer", "Explorer (Ctrl+Shift+E)"),
+            ("search", "search", "Search (Ctrl+Shift+F)"),
+            ("code-branch", "source", "Source Control (Ctrl+Shift+G)"),
+            ("play", "run", "Run and Debug (Ctrl+Shift+D)"),
+            ("robot", "ai", "AI Assistant (Ctrl+Shift+A)"),
+            ("boxes", "extensions", "Extensions (Ctrl+Shift+X)"),
         ]
         
         # Top buttons
-        for icon, view, tooltip in activities:
+        for icon_name, view, tooltip in activities:
             btn = ctk.CTkButton(
-                self, text=icon, width=48, height=48,
+                self, image=self.icons.get(icon_name), text="", 
+                width=48, height=48,
                 fg_color="transparent",
-                hover_color=("#D0D0D0", "#2A2A2A"),
-                text_color=("#333333", "#CCCCCC"),
+                hover_color=("#D0D0D0", "#2A2D2E"),
                 corner_radius=0,
-                font=("Segoe UI", 20),
                 command=lambda v=view: self.switch_view(v)
             )
             btn.pack(side="top")
             self.buttons[view] = btn
-            
-            # Tooltip (simplified)
             self._create_tooltip(btn, tooltip)
         
         # Spacer
@@ -45,26 +47,36 @@ class VSCodeSidebar(ctk.CTkFrame):
         
         # Bottom buttons
         bottom_activities = [
-            ("👤", "account", "Account"),
-            ("⚙️", "settings", "Settings (Ctrl+,)"),
+            ("user-circle", "account", "Account"),
+            ("cog", "settings", "Settings (Ctrl+,)"),
         ]
         
-        for icon, view, tooltip in bottom_activities:
+        for icon_name, view, tooltip in bottom_activities:
             btn = ctk.CTkButton(
-                self, text=icon, width=48, height=48,
+                self, image=self.icons.get(icon_name), text="",
+                width=48, height=48,
                 fg_color="transparent",
-                hover_color=("#D0D0D0", "#2A2A2A"),
-                text_color=("#333333", "#CCCCCC"),
+                hover_color=("#D0D0D0", "#2A2D2E"),
                 corner_radius=0,
-                font=("Segoe UI", 18),
                 command=lambda v=view: self.switch_view(v)
             )
             btn.pack(side="bottom")
             self.buttons[view] = btn
             self._create_tooltip(btn, tooltip)
         
-        # Set initial active
         self.set_active("explorer")
+
+    def _create_icons(self):
+        """Creates FontAwesome icons and stores them in cache."""
+        mode = ctk.get_appearance_mode()
+        color = "#333333" if mode == "Light" else "#CCCCCC"
+        
+        icon_names = ["copy", "search", "code-branch", "play", "robot", "boxes", "user-circle", "cog"]
+        for name in icon_names:
+            # The SvgImage is not compatible with CTkImage, so we pass it directly.
+            # This might affect automatic color switching on theme change.
+            img = icon_to_image(name, fill=color, scale_to_width=20)
+            self.icons[name] = img
     
     def _create_tooltip(self, widget, text):
         """Simple tooltip on hover."""

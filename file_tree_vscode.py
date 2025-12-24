@@ -8,6 +8,7 @@ import ast
 import re
 from typing import Optional
 from event_bus import event_bus, Events
+from tkfontawesome import icon_to_image
 
 
 class VSCodeFileTree(ctk.CTkFrame):
@@ -27,30 +28,13 @@ class VSCodeFileTree(ctk.CTkFrame):
         )
         title.pack(side="left", padx=10, pady=8)
         
+        # Icon cache
+        self.tree_icons = {}
+        self._create_tree_icons()
+        
         # Buttons
         btn_frame = ctk.CTkFrame(header, fg_color="transparent")
         btn_frame.pack(side="right", padx=5)
-        
-        for icon in ["⋯"]:
-            ctk.CTkButton(
-                btn_frame, text=icon, width=25, height=25,
-                fg_color="transparent", hover_color=("#D0D0D0", "#3E3E3E"),
-                font=("Segoe UI", 14), corner_radius=3
-            ).pack(side="left", padx=2)
-        
-        # Project name
-        self.project_frame = ctk.CTkFrame(self, fg_color="transparent", height=30)
-        self.project_frame.pack(fill="x", padx=5, pady=5)
-        self.project_frame.pack_propagate(False)
-        
-        self.project_btn = ctk.CTkButton(
-            self.project_frame, text="", anchor="w",
-            fg_color="transparent", hover_color=("#E0E0E0", "#2A2D2E"),
-            font=("Segoe UI", 11), corner_radius=0, height=30,
-            text_color=("#333333", "#CCCCCC"),
-            command=self.toggle_project
-        )
-        self.project_btn.pack(fill="x")
         
         # Tree container
         tree_container = ctk.CTkFrame(self, fg_color="transparent")
@@ -60,7 +44,7 @@ class VSCodeFileTree(ctk.CTkFrame):
         scrollbar = ctk.CTkScrollbar(tree_container)
         scrollbar.pack(side="right", fill="y")
         
-        # Treeview with VS Code style
+        # Treeview style
         self.style = ttk.Style()
         self.style.theme_use("default")
         self.update_tree_theme()
@@ -75,25 +59,19 @@ class VSCodeFileTree(ctk.CTkFrame):
         self.tree.pack(fill="both", expand=True, side="left")
         scrollbar.configure(command=self.tree.yview)
         
-        # Icons mapping
-        self.icons = {
-            "folder": "📁",
-            "folder_open": "📂",
-            "file": "📄",
-            ".py": "🐍",
-            ".js": "📜",
-            ".html": "🌐",
-            ".css": "🎨",
-            ".json": "📋",
-            ".md": "📝",
-            ".txt": "📄",
-            ".sh": "⚙️",
-            ".yml": "⚙️",
-            ".yaml": "⚙️"
-        }
-        
         self.expanded = True
         self.current_path = None
+        
+        # Project Button
+        self.project_btn = ctk.CTkButton(
+            self, text="", anchor="w",
+            fg_color="transparent", hover=False,
+            font=("Segoe UI", 11, "bold"),
+            command=self.toggle_project,
+            height=25,
+            corner_radius=0
+        )
+        self.project_btn.pack(fill="x", before=tree_container)
         
         # Bindings
         self.tree.bind("<<TreeviewOpen>>", self.on_open)
@@ -105,6 +83,60 @@ class VSCodeFileTree(ctk.CTkFrame):
             default_path = os.getcwd()
             self.load_directory(default_path)
         except (OSError, PermissionError):
+            pass
+
+    def _create_tree_icons(self):
+        """Creates PhotoImages for the treeview."""
+        mode = ctk.get_appearance_mode()
+        folder_color = "#D4A017" # Golden for folders
+        file_color = "#333333" if mode == "Light" else "#CCCCCC"
+        python_color = "#3776AB"
+        js_color = "#F7DF1E"
+        
+        self.tree_icons = {
+            "folder": icon_to_image("folder", fill=folder_color, scale_to_width=16),
+            "folder_open": icon_to_image("folder-open", fill=folder_color, scale_to_width=16),
+            "file": icon_to_image("file", fill=file_color, scale_to_width=16),
+            ".py": icon_to_image("python", fill=python_color, scale_to_width=16),
+            ".js": icon_to_image("js", fill=js_color, scale_to_width=16),
+            ".html": icon_to_image("html5", fill="#E34F26", scale_to_width=16),
+            ".css": icon_to_image("css3-alt", fill="#1572B6", scale_to_width=16),
+        }
+
+    def _populate_tree(self, parent: str, path: str) -> None:
+        """Populate tree with files and folders."""
+        try:
+            items = sorted(os.listdir(path))
+            
+            # Separate folders and files
+            folders = [i for i in items if os.path.isdir(os.path.join(path, i)) and not i.startswith(".")]
+            files = [i for i in items if os.path.isfile(os.path.join(path, i)) and not i.startswith(".")]
+            
+            # Add folders first
+            for item in folders:
+                item_path = os.path.join(path, item)
+                node = self.tree.insert(
+                    parent, "end",
+                    text=f" {item}",
+                    image=self.tree_icons["folder"],
+                    values=[item_path, "folder"],
+                    open=False
+                )
+                # Add dummy child for lazy loading
+                self.tree.insert(node, "end", text="")
+            
+            # Add files
+            for item in files:
+                item_path = os.path.join(path, item)
+                ext = os.path.splitext(item)[1].lower()
+                icon = self.tree_icons.get(ext, self.tree_icons["file"])
+                self.tree.insert(
+                    parent, "end",
+                    text=f" {item}",
+                    image=icon,
+                    values=[item_path, "file"]
+                )
+        except (PermissionError, OSError):
             pass
     
     def update_tree_theme(self) -> None:
@@ -180,40 +212,7 @@ class VSCodeFileTree(ctk.CTkFrame):
         
         self._populate_tree("", path)
     
-    def _populate_tree(self, parent: str, path: str) -> None:
-        """Populate tree with files and folders."""
-        try:
-            items = sorted(os.listdir(path))
-            
-            # Separate folders and files
-            folders = [i for i in items if os.path.isdir(os.path.join(path, i)) and not i.startswith(".")]
-            files = [i for i in items if os.path.isfile(os.path.join(path, i)) and not i.startswith(".")]
-            
-            # Add folders first
-            for item in folders:
-                item_path = os.path.join(path, item)
-                icon = self.icons["folder"]
-                node = self.tree.insert(
-                    parent, "end",
-                    text=f"  {icon} {item}",
-                    values=[item_path, "folder"],
-                    open=False
-                )
-                # Add dummy child for lazy loading
-                self.tree.insert(node, "end", text="")
-            
-            # Add files
-            for item in files:
-                item_path = os.path.join(path, item)
-                ext = os.path.splitext(item)[1]
-                icon = self.icons.get(ext, self.icons["file"])
-                self.tree.insert(
-                    parent, "end",
-                    text=f"  {icon} {item}",
-                    values=[item_path, "file"]
-                )
-        except (PermissionError, OSError):
-            pass
+    
     
     def on_open(self, event: tk.Event) -> None:
         """Handle folder expansion."""
@@ -234,9 +233,7 @@ class VSCodeFileTree(ctk.CTkFrame):
                 self._populate_tree(item, path)
                 
                 # Update icon
-                text = self.tree.item(item, "text")
-                new_text = text.replace(self.icons["folder"], self.icons["folder_open"])
-                self.tree.item(item, text=new_text)
+                self.tree.item(item, image=self.tree_icons["folder_open"])
         except (tk.TclError, IndexError, KeyError):
             pass
     
@@ -249,9 +246,7 @@ class VSCodeFileTree(ctk.CTkFrame):
                 if values and values[1] == "folder":
                     if self.tree.item(item, "open"):
                         # Update icon to closed
-                        text = self.tree.item(item, "text")
-                        new_text = text.replace(self.icons["folder_open"], self.icons["folder"])
-                        self.tree.item(item, text=new_text)
+                        self.tree.item(item, image=self.tree_icons["folder"])
         except (tk.TclError, IndexError, KeyError):
             pass
     
@@ -301,6 +296,10 @@ class VSCodeSections(ctk.CTkFrame):
     def __init__(self, master, app):
         super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
         self.app = app
+        
+        # Icon cache for symbols
+        self.symbol_icons = {}
+        self._create_symbol_icons()
         
         # Outline Section
         self.outline_btn = ctk.CTkButton(
@@ -356,6 +355,20 @@ class VSCodeSections(ctk.CTkFrame):
         
         # Subscribe to tab changes
         event_bus.subscribe(Events.TAB_CHANGED, self.on_tab_changed)
+
+    def _create_symbol_icons(self):
+        """Creates PhotoImages for code symbols."""
+        mode = ctk.get_appearance_mode()
+        color = "#333333" if mode == "Light" else "#CCCCCC"
+        
+        self.symbol_icons = {
+            "class": icon_to_image("cube", fill="#B180D7", scale_to_width=14),
+            "function": icon_to_image("terminal", fill="#4A9EFF", scale_to_width=14),
+            "method": icon_to_image("bolt", fill="#4A9EFF", scale_to_width=14),
+            "variable": icon_to_image("info-circle", fill="#4FC1FF", scale_to_width=14),
+            "macro": icon_to_image("hashtag", fill="#CCCCCC", scale_to_width=14),
+            "namespace": icon_to_image("archive", fill="#D4A017", scale_to_width=14)
+        }
         
     def toggle_outline(self):
         """Toggle outline section visibility."""
@@ -412,41 +425,56 @@ class VSCodeSections(ctk.CTkFrame):
             tree = ast.parse(content)
             for node in ast.iter_child_nodes(tree):
                 if isinstance(node, ast.ClassDef):
-                    class_id = self.outline_tree.insert("", "end", text=f"  {{}} {node.name}", values=[node.lineno], open=True)
+                    class_id = self.outline_tree.insert(
+                        "", "end", text=f" {node.name}", 
+                        image=self.symbol_icons["class"],
+                        values=[node.lineno], open=True
+                    )
                     for subnode in node.body:
                         if isinstance(subnode, ast.FunctionDef):
-                            self.outline_tree.insert(class_id, "end", text=f"  ƒ {subnode.name}", values=[subnode.lineno])
+                            self.outline_tree.insert(
+                                class_id, "end", text=f" {subnode.name}", 
+                                image=self.symbol_icons["method"],
+                                values=[subnode.lineno]
+                            )
                 elif isinstance(node, ast.FunctionDef):
-                    self.outline_tree.insert("", "end", text=f"  ƒ {node.name}", values=[node.lineno])
+                    self.outline_tree.insert(
+                        "", "end", text=f" {node.name}", 
+                        image=self.symbol_icons["function"],
+                        values=[node.lineno]
+                    )
         except SyntaxError: pass
 
     def _parse_javascript(self, content):
         """Usa Regex para encontrar clases y funciones en JS."""
         patterns = [
-            (r'class\s+([a-zA-Z0-9_$]+)', "  {} "),   # Clases
-            (r'function\s+([a-zA-Z0-9_$]+)', "  ƒ "),  # Funciones normales
-            (r'(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*\(.*?\)\s*=>', "  λ ") # Arrow functions
+            (r'class\s+([a-zA-Z0-9_$]+)', self.symbol_icons["class"]),
+            (r'function\s+([a-zA-Z0-9_$]+)', self.symbol_icons["function"]),
+            (r'(?:const|let|var)\s+([a-zA-Z0-9_$]+)\s*=\s*\(.*?\)\s*=>', self.symbol_icons["method"])
         ]
         self._apply_regex_outline(content, patterns)
 
     def _parse_html(self, content):
         """Usa Regex para encontrar IDs y etiquetas importantes en HTML."""
-        patterns = [
-            (r'<([a-zA-Z0-9]+)\s+[^>]*id=["\']([^"\']+)["\']', "  # "), # Elementos con ID
-            (r'<(h[1-6])(?:\s+[^>]*)?>(.*?)</h[1-6]>', "  H ")          # Encabezados
-        ]
-        # Custom logic for HTML due to multiple groups
         lines = content.split('\n')
         for i, line in enumerate(lines, 1):
-            for pattern, icon in patterns:
-                match = re.search(pattern, line)
-                if match:
-                    name = match.group(2) if len(match.groups()) >= 2 else match.group(1)
-                    self.outline_tree.insert("", "end", text=f"{icon}{name[:20]}", values=[i])
+            # Elementos con ID
+            match_id = re.search(r'<([a-zA-Z0-9]+)\s+[^>]*id=["\']([^"\']+)["\']', line)
+            if match_id:
+                self.outline_tree.insert(
+                    "", "end", text=f" #{match_id.group(2)}", 
+                    image=self.symbol_icons["variable"], values=[i]
+                )
+            # Encabezados
+            match_h = re.search(r'<(h[1-6])(?:\s+[^>]*)?>(.*?)</h[1-6]>', line)
+            if match_h:
+                self.outline_tree.insert(
+                    "", "end", text=f" {match_h.group(2)[:20]}", 
+                    image=self.symbol_icons["macro"], values=[i]
+                )
 
     def _parse_css(self, content):
         """Usa Regex para encontrar selectores en CSS."""
-        # Busca selectores antes de una llave de apertura
         pattern = r'([.#a-zA-Z][^{]*)\s*\{'
         lines = content.split('\n')
         for i, line in enumerate(lines, 1):
@@ -454,16 +482,18 @@ class VSCodeSections(ctk.CTkFrame):
             if match:
                 selector = match.group(1).strip()
                 if selector and not selector.startswith("@"):
-                    self.outline_tree.insert("", "end", text=f"  § {selector[:25]}", values=[i])
+                    self.outline_tree.insert(
+                        "", "end", text=f" {selector[:25]}", 
+                        image=self.symbol_icons["variable"], values=[i]
+                    )
 
     def _parse_cpp(self, content):
         """Usa Regex para encontrar símbolos en C/C++."""
         patterns = [
-            (r'(?:class|struct)\s+([a-zA-Z0-9_$]+)\s*(?::\s*[^{]*)?\{', "  {} "), # Clases y Structs
-            (r'namespace\s+([a-zA-Z0-9_$]+)\s*\{', "  ⬢ "),                       # Namespaces
-            (r'^\s*#\s*define\s+([a-zA-Z0-9_$]+)', "  # "),                      # Macros
-            # Funciones y Métodos: Tipo Nombre(Args)
-            (r'(?:[\w:]+\s+)+([\w:]+)\s*\([^)]*\)\s*(?:const)?\s*\{', "  ƒ ")
+            (r'(?:class|struct)\s+([a-zA-Z0-9_$]+)\s*(?::\s*[^{]*)?\{', self.symbol_icons["class"]),
+            (r'namespace\s+([a-zA-Z0-9_$]+)\s*\{', self.symbol_icons["namespace"]),
+            (r'^\s*#\s*define\s+([a-zA-Z0-9_$]+)', self.symbol_icons["macro"]),
+            (r'(?:[\w:]+\s+)+([\w:]+)\s*\([^)]*\)\s*(?:const)?\s*\{', self.symbol_icons["method"])
         ]
         self._apply_regex_outline(content, patterns)
 
@@ -471,10 +501,13 @@ class VSCodeSections(ctk.CTkFrame):
         """Aplica patrones regex línea por línea para generar el esquema."""
         lines = content.split('\n')
         for i, line in enumerate(lines, 1):
-            for pattern, icon in patterns:
+            for pattern, icon_img in patterns:
                 match = re.search(pattern, line)
                 if match:
-                    self.outline_tree.insert("", "end", text=f"{icon}{match.group(1)}", values=[i])
+                    self.outline_tree.insert(
+                        "", "end", text=f" {match.group(1)}", 
+                        image=icon_img, values=[i]
+                    )
 
     def on_outline_click(self, event):
         """Handles double-click on outline items to navigate to the code line."""
