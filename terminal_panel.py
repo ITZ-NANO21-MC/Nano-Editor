@@ -22,7 +22,8 @@ class TerminalPanel(customtkinter.CTkFrame):
         # Output area
         self.output = customtkinter.CTkTextbox(
             self, font=("monospace", 12),
-            wrap="word"
+            wrap="word",
+            state="disabled"
         )
         self.output.grid(row=0, column=0, sticky="nsew", padx=5, pady=5)
         
@@ -73,6 +74,7 @@ class TerminalPanel(customtkinter.CTkFrame):
         """Execute command in terminal."""
         if command is None:
             command = self.input.get().strip()
+            self.input.delete(0, "end")
         if not command:
             return
         
@@ -193,6 +195,7 @@ Examples:
     def write_output(self, text, tag="normal"):
         """Write text to output area."""
         try:
+            self.output.configure(state="normal")
             self.output.insert("end", text)
             
             # Configure tags for colors
@@ -210,13 +213,16 @@ Examples:
                 self.output.tag_config("error", foreground="#FF5555")
             
             self.output.see("end")
+            self.output.configure(state="disabled")
         except tkinter.TclError:
             pass
     
     def clear_output(self):
         """Clear terminal output."""
+        self.output.configure(state="normal")
         self.output.delete("1.0", "end")
         self.write_output(f"Working directory: {self.cwd}\n\n")
+        self.output.configure(state="disabled")
     
     def clear_terminal(self):
         """Alias for clear_output."""

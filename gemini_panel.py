@@ -15,7 +15,7 @@ class GeminiPanel(customtkinter.CTkFrame):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=1)
 
-        self.output_text = customtkinter.CTkTextbox(self, font=("monospace", 14))
+        self.output_text = customtkinter.CTkTextbox(self, font=("monospace", 14), state="disabled")
         self.output_text.grid(row=0, column=0, columnspan=2, sticky="nsew")
 
         # Input Frame
@@ -46,9 +46,11 @@ class GeminiPanel(customtkinter.CTkFrame):
         try:
             self.is_processing = True
             self.send_button.configure(state="disabled", text="Sending...")
+            self.input_entry.delete(0, "end")
             self.input_entry.configure(state="disabled")
             
             final_query = query
+            self.output_text.configure(state="normal")
             # Check if context should be included
             if self.context_checkbox.get():
                 self.output_text.insert("1.0", "Gathering project context...\n")
@@ -58,8 +60,7 @@ class GeminiPanel(customtkinter.CTkFrame):
             self.output_text.delete("1.0", "end")
             self.output_text.insert("1.0", f"You: {query}\n\n")
             self.output_text.insert("end", "Gemini: Thinking...\n")
-            
-            self.input_entry.delete(0, "end")
+            self.output_text.configure(state="disabled")
             
             self.gemini_client.run_gemini(final_query, self.display_response)
         except tkinter.TclError:
@@ -76,6 +77,7 @@ class GeminiPanel(customtkinter.CTkFrame):
     
     def _update_response(self, response):
         try:
+            self.output_text.configure(state="normal")
             content = self.output_text.get("1.0", "end")
             lines = content.split("\n")
             
@@ -86,6 +88,7 @@ class GeminiPanel(customtkinter.CTkFrame):
             
             processed_response = process_ai_code_output(response)
             self.output_text.insert("end", f"Gemini: {processed_response}\n")
+            self.output_text.configure(state="disabled")
         except tkinter.TclError:
             pass
         finally:
