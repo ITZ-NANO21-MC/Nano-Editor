@@ -21,8 +21,114 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.bind("<Return>", self._on_completion_select)
         self.bind("<Tab>", self._on_completion_select)
         self.bind("<Escape>", self._on_completion_hide)
+        
+        # Vincular eventos de scroll del mouse y configuración
+        self.bind("<MouseWheel>", self._on_mousewheel)
+        self.bind("<Button-4>", self._on_mousewheel)  # Linux scroll up
+        self.bind("<Button-5>", self._on_mousewheel)  # Linux scroll down
+        self.bind("<Configure>", self._on_configure)
+        
+        # Vincular al frame principal para capturar eventos cuando el mouse está sobre números de línea
+        if self.master:
+            self.master.bind("<MouseWheel>", self._forward_mousewheel)
+            self.master.bind("<Button-4>", self._forward_mousewheel)
+            self.master.bind("<Button-5>", self._forward_mousewheel)
+        
         self.file_path = None
         self.completion_popup = None
+        
+        # Configurar sincronización de barra de desplazamiento
+        self.after(200, self._configure_scrollbar_sync)
+
+    def _configure_scrollbar_sync(self):
+        """Configure the internal scrollbar to sync with line numbers."""
+        # CTkTextbox tiene un atributo _scrollbar interno
+        if hasattr(self, '_scrollbar') and self._scrollbar:
+            # Guardar el comando original (que mueve el texto)
+            self._original_scrollbar_command = self._scrollbar.cget("command")
+            # Reemplazar con nuestro comando que mueve ambos
+            self._scrollbar.configure(command=self._on_scrollbar_scroll)
+        else:
+            # Reintentar si el widget aún no está totalmente listo
+            self.after(100, self._try_find_scrollbar)
+
+    def _try_find_scrollbar(self):
+        """Try to find the scrollbar widget among children."""
+        for child in self.winfo_children():
+            if "scrollbar" in str(child).lower():
+                self._original_scrollbar_command = child.cget("command")
+                child.configure(command=self._on_scrollbar_scroll)
+                break
+
+    def _on_scrollbar_scroll(self, *args):
+        """Handle scrollbar movement to sync line numbers."""
+        # Llamar al comando original para mover el texto
+        if hasattr(self, '_original_scrollbar_command') and self._original_scrollbar_command:
+            self._original_scrollbar_command(*args)
+        
+        # Sincronizar números de línea inmediatamente
+        self._sync_line_numbers()
+
+    def _on_mousewheel(self, event):
+        """Handle mouse wheel scrolling with line number sync."""
+        try:
+            scroll_delta = 0
+            if event.num == 4: scroll_delta = -1
+            elif event.num == 5: scroll_delta = 1
+            elif hasattr(event, 'delta'):
+                scroll_delta = -1 if event.delta > 0 else 1
+            
+            if scroll_delta != 0:
+                self.yview_scroll(scroll_delta, "units")
+                self._sync_line_numbers()
+            return "break"
+        except Exception:
+            return "break"
+
+    def _forward_mousewheel(self, event):
+        """Forward mouse wheel events from parent widget."""
+        self._on_mousewheel(event)
+        return "break"
+
+    def _on_configure(self, event):
+        """Redraw line numbers when widget is resized."""
+        if self.line_numbers:
+            self.line_numbers.redraw()
+            self._sync_line_numbers()
+
+    def _sync_line_numbers(self):
+        """Sync line numbers position with text widget."""
+        if self.line_numbers:
+            try:
+                # Obtener la vista vertical del widget de texto (interno)
+                # CTkTextbox.yview() devuelve (start, end)
+                y_pos = self.yview()
+                if y_pos:
+                    # Mover los números de línea a la misma posición fraccional
+                    self.line_numbers.yview_moveto(y_pos[0])
+                    # Forzar redibujado
+                    self.line_numbers.redraw()
+            except tkinter.TclError:
+                pass
+
+    def yview(self, *args):
+        """Override yview to synchronize with line numbers."""
+        try:
+            result = super().yview(*args)
+            
+            if self.line_numbers:
+                if args:
+                    # Si hay argumentos, estamos moviendo la vista
+                    self.line_numbers.yview(*args)
+                else:
+                    # Si no hay argumentos, es una consulta de posición.
+                    # Aprovechamos para sincronizar.
+                    self._sync_line_numbers()
+            
+            return result
+        except (tkinter.TclError, AttributeError):
+            return (0.0, 1.0)
+
 
     def _on_completion_up(self, event):
         if self.completion_popup:
@@ -122,10 +228,37 @@ class CodeEditor(customtkinter.CTkTextbox):
             pass # Silently fail on other errors
 
     def yview(self, *args):
+        """Override yview to synchronize with line numbers."""
         try:
+            # Mover el texto primero
             result = super().yview(*args)
-            if self.line_numbers:
+            
+            # Sincronizar números de línea DINÁMICAMENTE
+            if self.line_numbers and args:
+                # Calcular posición actual para sincronización precisa
+                if len(args) >= 2 and args[0] == 'moveto':
+                    # Movimiento absoluto
+                    self.line_numbers.yview_moveto(args[1])
+                elif len(args) >= 2 and args[0] == 'scroll':
+                    # Desplazamiento relativo
+                    units = int(args[1])
+                    what = args[2] if len(args) > 2 else "units"
+                    self.line_numbers.yview_scroll(units, what)
+                
+                # Forzar redibujado inmediato
                 self.line_numbers.redraw()
-            return "break"
+            
+            return result
         except tkinter.TclError:
-            return "break"
+            return (0.0, 1.0)
+
+    def yview_scroll(self, number, what):
+        """Override yview_scroll for better synchronization."""
+        try:
+            super().yview_scroll(number, what)
+            # Actualizar números de línea inmediatamente después del scroll
+            if self.line_numbers:
+                self.after(10, self._sync_line_numbers)
+        except tkinter.TclError:
+            pass
+
