@@ -27,11 +27,6 @@ class CompletionPopup(customtkinter.CTkToplevel):
         for comp in self.completions:
             self.listbox.insert("end", comp.name)
 
-        self.listbox.bind("<Return>", self.handle_key_event)
-        self.listbox.bind("<Up>", self.handle_key_event)
-        self.listbox.bind("<Down>", self.handle_key_event)
-        self.listbox.bind("<Escape>", self.handle_key_event)
-
         self.transient(master)  # Make it appear on top of the main window
         self.withdraw()  # Hide it initially
 
@@ -49,14 +44,16 @@ class CompletionPopup(customtkinter.CTkToplevel):
 
         self.geometry(f"+{x}+{y}")
         self.deiconify()  # Show the window
-        self.listbox.focus_set()
         self.listbox.selection_set(0)  # Select first item
 
-    def hide(self, event=None):  # Hide the window
-        self.withdraw()  # Hide the window
+    def hide(self):
+        """Hide the popup window."""
+        self.withdraw()
 
-    def select_completion(self):
+    def confirm_selection(self):
+        """Confirm the current selection and insert it into the text widget."""
         if not self.listbox.curselection():
+            self.hide()
             return
 
         try:
@@ -67,6 +64,7 @@ class CompletionPopup(customtkinter.CTkToplevel):
             
             selected_completion = self.completions[selected_index].name
             
+            # Replace the word before the cursor with the completion
             cursor_index = self.text_widget.index(customtkinter.INSERT)
             line, col = map(int, cursor_index.split('.'))
             
@@ -75,15 +73,15 @@ class CompletionPopup(customtkinter.CTkToplevel):
             
             self.text_widget.delete(word_start, word_end)
             self.text_widget.insert(customtkinter.INSERT, selected_completion)
+            
+        except (IndexError, ValueError, AttributeError, tkinter.TclError):
+            pass  # Silently fail
+        finally:
             self.hide()
             self.text_widget.focus_set()
-        except (IndexError, ValueError, AttributeError, tkinter.TclError) as e:
-            # Silently fail if widget is destroyed or in invalid state
-            self.hide()
 
-    def _move_selection(self, direction):
+    def move_selection(self, direction: int):
         """Move listbox selection up (-1) or down (1)."""
-        self.listbox.selection_clear(0, "end")
         current_selection = self.listbox.curselection()
         list_size = self.listbox.size()
         
@@ -92,24 +90,10 @@ class CompletionPopup(customtkinter.CTkToplevel):
         
         if current_selection:
             current_index = current_selection[0]
-            new_index = current_index + direction
-            new_index = max(0, min(list_size - 1, new_index))
+            new_index = (current_index + direction) % list_size
         else:
             new_index = 0 if direction > 0 else list_size - 1
-        
+            
+        self.listbox.selection_clear(0, "end")
         self.listbox.selection_set(new_index)
         self.listbox.see(new_index)
-    
-    def handle_key_event(self, event):
-        key_actions = {
-            "Up": lambda: self._move_selection(-1),
-            "Down": lambda: self._move_selection(1),
-            "Return": self.select_completion,
-            "Escape": self.hide
-        }
-        
-        action = key_actions.get(event.keysym)
-        if action:
-            action()
-        
-        return "break"

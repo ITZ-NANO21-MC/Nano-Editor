@@ -15,41 +15,52 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.async_highlighter = AsyncHighlighter(delay_ms=300)
         self.bind("<<Modified>>", self.on_text_changed)
         self.bind("<KeyRelease>", self.on_key_release)
-        self.bind("<Control-space>", lambda event: self.get_completions())
-        self.bind("<Up>", self.handle_popup_key_event)
-        self.bind("<Down>", self.handle_popup_key_event)
-        self.bind("<Return>", self.handle_popup_key_event)
-        self.bind("<Escape>", self.handle_popup_key_event)
+        self.bind("<Control-space>", lambda event: self.show_completions())
+        self.bind("<Up>", self._on_completion_up)
+        self.bind("<Down>", self._on_completion_down)
+        self.bind("<Return>", self._on_completion_select)
+        self.bind("<Tab>", self._on_completion_select)
+        self.bind("<Escape>", self._on_completion_hide)
         self.file_path = None
         self.completion_popup = None
 
-    def handle_popup_key_event(self, event):
-        try:
-            if self.completion_popup and self.completion_popup.winfo_exists():
-                self.completion_popup.handle_key_event(event)
-                return "break"
-        except tkinter.TclError:
+    def _on_completion_up(self, event):
+        if self.completion_popup:
+            self.completion_popup.move_selection(-1)
+            return "break"
+
+    def _on_completion_down(self, event):
+        if self.completion_popup:
+            self.completion_popup.move_selection(1)
+            return "break"
+
+    def _on_completion_select(self, event):
+        if self.completion_popup:
+            self.completion_popup.confirm_selection()
             self.completion_popup = None
-        return None
+            return "break"
+
+    def _on_completion_hide(self, event):
+        if self.completion_popup:
+            self.completion_popup.hide()
+            self.completion_popup = None
+            return "break"
 
     def on_key_release(self, event):
         try:
-            if self.completion_popup and self.completion_popup.winfo_exists():
-                if event.keysym not in ["Up", "Down", "Return", "Escape",
+            # Hide popup on most keys, but not navigation/selection keys
+            if self.completion_popup:
+                if event.keysym not in ("Up", "Down", "Return", "Tab", "Escape",
                                         "Control_L", "Control_R", "Shift_L", "Shift_R",
-                                        "Alt_L", "Alt_R", "period"]:
-                    try:
-                        self.completion_popup.hide()
-                        self.completion_popup.destroy()
-                    except tkinter.TclError:
-                        pass
-                    finally:
-                        self.completion_popup = None
+                                        "Alt_L", "Alt_R"):
+                    self.completion_popup.hide()
+                    self.completion_popup = None
 
+            # Trigger completions automatically
             if event.keysym == 'period':
-                self.get_completions()
-            elif event.keysym == 'space' and event.state & 0x4:
-                self.get_completions()
+                self.show_completions()
+            elif event.keysym == 'space' and event.state & 0x4: # Ctrl+Space
+                self.show_completions()
         except Exception:
             pass
 
@@ -87,33 +98,28 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Apply highlighting tokens in main thread."""
         self.after(0, lambda: self.highlighter.apply_tokens(tokens))
 
-    def get_completions(self):
+    def show_completions(self):
+        """Get and show completions from Jedi."""
         try:
+            if self.completion_popup:
+                self.completion_popup.hide()
+                self.completion_popup = None
+
             code = self.get("1.0", "end-1c")
             cursor_pos = self.index(customtkinter.INSERT)
             line, col = map(int, cursor_pos.split('.'))
 
-            script = jedi.Script(code)
+            script = jedi.Script(code, path=self.file_path or "temp.py")
             completions = script.complete(line=line, column=col)
-
-            if self.completion_popup:
-                try:
-                    self.completion_popup.hide()
-                    self.completion_popup.destroy()
-                except tkinter.TclError:
-                    pass
-                finally:
-                    self.completion_popup = None
 
             if completions:
                 self.completion_popup = CompletionPopup(self.master, self, completions)
                 self.completion_popup.show()
 
-            return completions
         except (tkinter.TclError, ValueError, AttributeError):
-            return []
+            pass # Silently fail
         except Exception:
-            return []
+            pass # Silently fail on other errors
 
     def yview(self, *args):
         try:
