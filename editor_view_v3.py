@@ -14,6 +14,7 @@ from find_replace import FindReplaceWindow
 from ai_assistant import AIAssistant
 from ai_menu import AIActionDialog, AIResultDialog
 from ai_file_operations import AIFileOperations
+from project_context import ProjectContext
 from project_search import ProjectSearchWindow
 from goto_definition import GotoDefinition, setup_goto_definition_bindings
 from ai_utils import process_ai_code_output

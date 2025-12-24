@@ -32,3 +32,26 @@ class GeminiClient:
 
         thread = threading.Thread(target=target, daemon=True)
         thread.start()
+
+    def run_gemini_stream(self, query: str):
+        """Runs Gemini API with streaming and yields response chunks."""
+        try:
+            import google.generativeai as genai
+            
+            api_key = config.get('GEMINI_API_KEY')
+            if not api_key:
+                yield "Error: GEMINI_API_KEY not configured. Create a .env file with your key."
+                return
+            
+            genai.configure(api_key=api_key)
+            model = genai.GenerativeModel(self.model_name)
+            response_stream = model.generate_content(query, stream=True)
+            
+            for chunk in response_stream:
+                if chunk.text:
+                    yield chunk.text
+        
+        except ImportError:
+            yield "Error: google-generativeai not installed. Run: pip install google-generativeai"
+        except Exception as e:
+            yield f"Error: {str(e)}"

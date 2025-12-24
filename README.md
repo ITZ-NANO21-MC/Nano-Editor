@@ -1,10 +1,10 @@
-# NanoEditor v3.1 (Context-Aware AI)
+# NanoEditor v3.2 (Streaming Chat & UI Refactor)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Production%20Ready-success.svg)]()
 
-Editor de código moderno y ligero con interfaz estilo VS Code, integración completa de IA con contexto de proyecto y arquitectura robusta. Diseñado para ser rápido, seguro y fácil de extender.
+Editor de código moderno y ligero con interfaz estilo VS Code, integración completa de IA con chat en tiempo real y arquitectura robusta. Diseñado para ser rápido, seguro y fácil de extender.
 
 **Puntuación de Calidad: 8.5/10** ⭐⭐⭐⭐
 
@@ -39,7 +39,8 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
   - Create File
   - Modify File
   - Add Function
-- **Chat Gemini Contextual**: Panel de chat con opción de incluir el contexto del proyecto en la conversación.
+- **Chat con Streaming**: Las respuestas de la IA aparecen en tiempo real, palabra por palabra, para una experiencia de chat fluida y sin esperas.
+- **Chat Gemini Contextual**: Panel de chat que mantiene el historial de la conversación y permite incluir opcionalmente el contexto del proyecto.
 - **Limpieza Automática de Salida**: Elimina los ´´´ de las respuestas de la IA para un uso directo.
 
 ### 🖥️ Terminal Integrado
@@ -241,6 +242,12 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v3.2 (UI & Chat Refactor) - Diciembre 2025
+- ✅ **Chat con Streaming**: Se modernizó por completo el panel de chat de Gemini. Ahora mantiene un historial persistente y muestra las respuestas de la IA en tiempo real (palabra por palabra).
+- ✅ **Protección de UI**: Los paneles de la terminal y del historial del chat ahora son de solo lectura para prevenir ediciones accidentales.
+- ✅ **Corrección de Bugs**: Solucionados múltiples errores críticos que provocaban el cierre de la aplicación al iniciar, relacionados con el renderizado de iconos y la inicialización de componentes.
+- ✅ **Corrección de Contexto de IA**: Resuelto un `NameError` que impedía a las funciones de la IA acceder al contexto del proyecto.
 
 ### v3.1 (Context-Aware AI) - Diciembre 2025
 - ✅ **IA con Contexto de Proyecto**: El asistente ahora analiza los archivos abiertos y la estructura del proyecto para ofrecer respuestas más inteligentes.
