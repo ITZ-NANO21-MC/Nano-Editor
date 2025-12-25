@@ -569,10 +569,22 @@ Ctrl+Click - Goto Definition"""
         return context_builder.gather_context_for_ai()
 
     def _get_selected_text(self) -> str:
+        """Get selected text or all text if nothing is selected."""
         try:
-            return self.tab_manager.text_area.get("sel.first", "sel.last")
-        except tkinter.TclError:
-            return self.tab_manager.text_area.get("1.0", "end-1c")
+             # Check if there's a selection
+            if self.tab_manager.text_area.tag_ranges("sel"):
+                return self.tab_manager.text_area.get("sel.first", "sel.last")
+            else:
+                # Get current line if cursor is on it
+                cursor_pos = self.tab_manager.text_area.index(ctk.INSERT)
+                line_num = cursor_pos.split('.')[0]
+                return self.tab_manager.text_area.get(f"{line_num}.0", f"{line_num}.end")
+        except (tk.TclError, AttributeError, ValueError):
+            # Fallback to entire content
+            try:
+                return self.tab_manager.text_area.get("1.0", "end-1c")
+            except (tk.TclError, AttributeError):
+                return ""
 
     def _insert_text_at_cursor(self, text: str) -> None:
         try:
