@@ -1,6 +1,9 @@
 """Asynchronous syntax highlighting with debouncing."""
 import threading
 from typing import Callable, Optional, List, Tuple, Any
+from pygments import lex
+from pygments.lexers import get_lexer_for_filename, TextLexer
+
 
 class AsyncHighlighter:
     """Non-blocking syntax highlighter with debouncing."""
@@ -25,9 +28,7 @@ class AsyncHighlighter:
         """Execute highlighting in background thread."""
         def worker() -> None:
             try:
-                from pygments import lex
-                from pygments.lexers import get_lexer_for_filename, TextLexer
-                
+                # Usar TextLexer si no se puede determinar el lenguaje
                 try:
                     lexer = get_lexer_for_filename(filepath)
                 except Exception:
@@ -35,8 +36,9 @@ class AsyncHighlighter:
                 
                 tokens = list(lex(text, lexer))
                 callback(tokens)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"Error en worker de resaltado: {e}")
+                callback([])  # Enviar lista vacía en caso de error
         
         thread = threading.Thread(target=worker, daemon=True)
         thread.start()
