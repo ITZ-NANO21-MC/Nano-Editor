@@ -171,12 +171,18 @@ class App(ctk.CTk):
         # Content area
         content = ctk.CTkFrame(main, fg_color="transparent")
         content.pack(fill="both", expand=True)
-        content.grid_rowconfigure(0, weight=150)
-        content.grid_rowconfigure(1, weight=1)
-        content.grid_rowconfigure(2, weight=1)
+        
+        # ============================================================
+        # CONFIGURACIÓN DE GRID CORREGIDA (enteros en lugar de floats)
+        # ============================================================
+        content.grid_rowconfigure(0, weight=70)   # Editor: 70%
+        content.grid_rowconfigure(1, weight=15)   # Terminal: 15%
+        content.grid_rowconfigure(2, weight=15)   # Gemini panel: 15%
+        
         content.grid_columnconfigure(0, weight=0, minsize=48)  # Sidebar
-        content.grid_columnconfigure(1, weight=0, minsize=250)  # Panel
-        content.grid_columnconfigure(2, weight=1)  # Editor
+        content.grid_columnconfigure(1, weight=0, minsize=250) # Panel
+        content.grid_columnconfigure(2, weight=1)              # Editor
+        # ============================================================
         
         # Activity bar (sidebar)
         self.sidebar = VSCodeSidebar(content, self)
@@ -565,13 +571,13 @@ Ctrl+Click - Goto Definition"""
     def _get_selected_text(self) -> str:
         try:
             return self.tab_manager.text_area.get("sel.first", "sel.last")
-        except tk.TclError:
+        except tkinter.TclError:
             return self.tab_manager.text_area.get("1.0", "end-1c")
 
     def _insert_text_at_cursor(self, text: str) -> None:
         try:
             self.tab_manager.text_area.insert(ctk.INSERT, text)
-        except tk.TclError:
+        except tkinter.TclError:
             pass
 
     def _show_ai_result(self, title: str, result: str, allow_insert: bool = True) -> None:
@@ -608,7 +614,7 @@ Ctrl+Click - Goto Definition"""
             self.tab_manager.text_area.tag_add("highlight", f"{line_num}.0", f"{line_num}.end")
             self.tab_manager.text_area.tag_config("highlight", background="#3B8ED0")
             self.tab_manager.text_area.after(1500, lambda: self.tab_manager.text_area.tag_remove("highlight", "1.0", "end"))
-        except (tk.TclError, AttributeError):
+        except (tkinter.TclError, AttributeError):
             pass
 
     def handle_goto_definition(self):
