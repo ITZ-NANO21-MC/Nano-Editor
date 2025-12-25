@@ -150,7 +150,7 @@ class App(ctk.CTk):
         # Content area
         content = ctk.CTkFrame(main, fg_color="transparent")
         content.pack(fill="both", expand=True)
-        content.grid_rowconfigure(0, weight=3)
+        content.grid_rowconfigure(0, weight=150)
         content.grid_rowconfigure(1, weight=1)
         content.grid_rowconfigure(2, weight=1)
         content.grid_columnconfigure(0, weight=0, minsize=48)  # Sidebar
