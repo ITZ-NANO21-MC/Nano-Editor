@@ -99,28 +99,49 @@ class ModernMenuBar(ctk.CTkFrame):
             ])
         ]
         
+        # Diccionario para almacenar botones y sus menús
+        self.menu_buttons = {}
+        
         for label, items in menus:
             btn = ctk.CTkButton(
                 self, text=label, width=60, height=28,
                 fg_color="transparent", hover_color=("#D0D0D0", "#2D2D2D"),
                 text_color=("#333333", "#CCCCCC"),
-                corner_radius=4, font=("Segoe UI", 12),
-                command=lambda i=items: self.show_dropdown(i)
+                corner_radius=4, font=("Segoe UI", 12)
             )
             btn.pack(side="left", padx=2, pady=3)
+            
+            # Almacenar referencia al botón y sus items
+            self.menu_buttons[btn] = items
+            
+            # Vincular evento al botón específico
+            btn.configure(command=lambda b=btn: self.show_dropdown(b))
 
-
-    def show_dropdown(self, items):
-        """Show dropdown menu."""
+    def show_dropdown(self, button):
+        """Show dropdown menu at the specific button location."""
+        # Obtener los items del menú para este botón
+        items = self.menu_buttons.get(button)
+        if not items:
+            return
+        
+        # Calcular posición del botón en pantalla
+        button_x = button.winfo_rootx()
+        button_y = button.winfo_rooty() + button.winfo_height()
+        
+        # Crear menú desplegable
         menu = tk.Menu(self, tearoff=0, font=("Segoe UI", 10))
+        
+        # Añadir items al menú
         for item in items:
             if item is None:
                 menu.add_separator()
             else:
                 label, command = item
                 menu.add_command(label=label, command=command)
+        
         try:
-            menu.tk_popup(self.winfo_rootx(), self.winfo_rooty() + 35)
+            # Mostrar menú en la posición correcta
+            menu.tk_popup(button_x, button_y)
         finally:
             menu.grab_release()
 
@@ -773,4 +794,3 @@ Ctrl+Click - Goto Definition"""
 if __name__ == "__main__":
     app = App()
     app.mainloop()
-
