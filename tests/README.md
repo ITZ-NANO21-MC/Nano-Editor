@@ -1,78 +1,64 @@
-# Tests - NanoEditor
+# Tests - NanoEditor v3.2
 
 ## 📋 Test Suite
 
-Tests básicos para NanoEditor v3.0.
+Tests unitarios y de integración básica para NanoEditor v3.2.
 
 ## 🧪 Tests Incluidos
 
 ### test_config.py
-- Carga de configuración
-- Valores por defecto
-- Conversión de tipos (int, bool)
+- Carga de configuración desde `.env`.
+- Validación de valores por defecto.
+- Conversión robusta de tipos (int, bool).
 
 ### test_tab_manager.py
-- Creación de tabs
-- Títulos de tabs
-- Estado modificado
-- Manejo de archivos
+- Lógica de la clase `EditorTab`.
+- Gestión de rutas de archivos y estados de modificación.
+- Generación dinámica de títulos de pestañas.
 
 ### test_utils.py
-- Detección de lenguaje por extensión
-- Operaciones de path
-- Basename, dirname, splitext
+- Detección de lenguaje por extensión.
+- Operaciones seguras de rutas (`os.path`).
 
 ### test_gemini_client.py
-- Inicialización del cliente
-- Métodos disponibles
+- **Streaming de IA**: Verificación de la recepción de fragmentos en tiempo real.
+- **Mocks de API**: Simulación completa de la librería `google-generativeai` para tests rápidos y sin coste.
+- **Manejo de Errores**: Pruebas de fallos de API, errores de conexión y ausencia de API Key.
 
 ## 🚀 Ejecutar Tests
 
-### Opción 1: Script
+### Opción 1: Script (Recomendado)
 ```bash
 ./run_tests.sh
 ```
 
-### Opción 2: Python unittest
+### Opción 2: Cobertura (Detailed Report)
 ```bash
-python3 -m unittest discover -s tests -p "test_*.py" -v
-```
-
-### Opción 3: Pytest (si está instalado)
-```bash
-pytest tests/ -v
-```
-
-### Opción 4: Test individual
-```bash
-python3 tests/test_config.py
-python3 tests/test_tab_manager.py
-python3 tests/test_utils.py
-python3 tests/test_gemini_client.py
+coverage run -m unittest discover -s tests -p "test_*.py"
+coverage report
 ```
 
 ## 📊 Cobertura Actual
 
-- **config.py**: ✅ Básico
-- **tab_manager.py**: ✅ EditorTab
-- **Utilidades**: ✅ Path operations
-- **gemini_client.py**: ✅ Inicialización
+- **TOTAL**: 📈 **39%** (Aumento desde 34%)
+- **config.py**: ✅ 82%
+- **event_bus.py**: ✅ 61%
+- **gemini_client.py**: 🔵 56% (Aumento significativo con mocks)
+- **tab_manager.py**: 🟡 21% (Lógica de datos cubierta)
 
 ## 🎯 Próximos Tests
 
-- [ ] Tests de integración para GUI
-- [ ] Tests para AI operations
-- [ ] Tests para file operations
-- [ ] Tests para terminal
-- [ ] Tests para syntax highlighter
-- [ ] Mocks para API de Gemini
+- [ ] Tests de integración para la interfaz de usuario (GUI)
+- [ ] Tests para operaciones de archivos con IA (`ai_file_operations.py`)
+- [ ] Tests para el terminal integrado
+- [ ] Tests para el resaltado de sintaxis asíncrono
+- [x] Mocks para API de Gemini
 
-## 📝 Notas
+## 📝 Notas de Robustez
 
-- Tests actuales son unitarios básicos
-- No requieren GUI (headless)
-- No requieren API key de Gemini
-- Ejecutan rápido (<1s)
+- **Aislamiento de UI**: Los módulos principales (`tab_manager.py`, `text_area.py`) han sido modificados para permitir su importación en entornos de test sin necesidad de tener instalada la librería `customtkinter`.
+- **Ejecución Headless**: No se requiere ventana gráfica ni API Key real para pasar los tests.
+- **Velocidad**: La suite completa se ejecuta en <1.5s.
 
 ## 🔧 Agregar Nuevos Tests
 

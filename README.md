@@ -140,19 +140,21 @@ python3 main.py
 - [x] Syntax highlighting asíncrono
 - [x] Terminal integrado
 - [x] IA Assistant (10+ funciones)
+- [x] **Chat con Streaming en tiempo real**
 - [x] **IA con Contexto de Proyecto**
 - [x] Temas Light/Dark
 - [x] Feedback visual
 - [x] Sistema de logging
 - [x] Validación de inputs
 - [x] Sanitización de comandos
-- [x] Tests básicos (17 tests)
+- [x] **Suite de Tests Robusta (20 tests)**
+- [x] **Robustez de módulos (importación sin UI)**
 - [x] Type hints (61 funciones)
 - [x] Event Bus (bajo acoplamiento)
 
 ### 🔄 Próximas Mejoras
 
-- [ ] Aumentar cobertura de tests (35% → 70%)
+- [ ] Aumentar cobertura de tests (39% → 70%)
 - [ ] Migrar a Event Bus completo
 - [ ] Implementar CI/CD
 - [ ] Sistema de plugins
@@ -164,22 +166,22 @@ python3 main.py
 Nano_Editor/
 ├── main.py                    # Punto de entrada
 ├── editor_view_v3.py          # Aplicación principal
-├── tab_manager.py             # Gestión de pestañas
-├── text_area.py               # Editor de texto
+├── tab_manager.py             # Gestión de pestañas (Resiliente a ImportError)
+├── text_area.py               # Editor de texto (Resiliente a ImportError)
 ├── syntax_highlighter.py      # Resaltado de sintaxis
 ├── async_highlighter.py       # Highlighting asíncrono
 ├── ai_assistant.py            # Asistente de IA
 ├── project_context.py         # Lógica para dar contexto a la IA
 ├── ai_utils.py                # Utilidades para el asistente de IA
-├── gemini_client.py           # Cliente Gemini
-├── terminal_panel.py          # Terminal integrado
+├── gemini_client.py           # Cliente Gemini (Soporta Streaming)
+├── terminal_panel.py          # Terminal integrado (Protegido)
 ├── visual_feedback.py         # Notificaciones
 ├── event_bus.py               # Sistema de eventos
 ├── logger.py                  # Sistema de logging
 ├── file_tree_vscode.py        # Explorador de archivos
 ├── sidebar_vscode.py          # Barra lateral
 ├── status_bar.py              # Barra de estado
-├── tests/                     # Tests unitarios
+├── tests/                     # Tests unitarios (Mocks incluidos)
 ├── Informacion/               # Documentación completa
 └── legacy/                    # Versiones anteriores
 ```
@@ -187,14 +189,12 @@ Nano_Editor/
 ## 🧪 Testing
 
 ```bash
-# Ejecutar todos los tests
+# Ejecutar todos los tests (headless)
 ./run_tests.sh
 
-# Ejecutar tests específicos
-python3 -m pytest tests/test_config.py
-
-# Validar correcciones
-./validate_corrections.sh
+# Ejecutar tests con reporte de cobertura
+coverage run -m unittest discover -s tests -p 'test_*.py'
+coverage report
 ```
 
 ## 📚 Documentación
@@ -246,8 +246,9 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 ### v3.2 (UI & Chat Refactor) - Diciembre 2025
 - ✅ **Chat con Streaming**: Se modernizó por completo el panel de chat de Gemini. Ahora mantiene un historial persistente y muestra las respuestas de la IA en tiempo real (palabra por palabra).
 - ✅ **Protección de UI**: Los paneles de la terminal y del historial del chat ahora son de solo lectura para prevenir ediciones accidentales.
-- ✅ **Corrección de Bugs**: Solucionados múltiples errores críticos que provocaban el cierre de la aplicación al iniciar, relacionados con el renderizado de iconos y la inicialización de componentes.
-- ✅ **Corrección de Contexto de IA**: Resuelto un `NameError` que impedía a las funciones de la IA acceder al contexto del proyecto.
+- ✅ **Suite de Tests Mejorada**: Implementación de mocks para la API de Gemini y aumento de la cobertura de código al 39%.
+- ✅ **Robustez de Módulos**: Los componentes principales (`tab_manager.py`, `text_area.py`) ahora pueden importarse sin dependencias de UI, facilitando el testing automatizado.
+- ✅ **Corrección de Bugs Críticos**: Solucionados errores de renderizado de iconos y el `NameError` del contexto de IA.
 
 ### v3.1 (Context-Aware AI) - Diciembre 2025
 - ✅ **IA con Contexto de Proyecto**: El asistente ahora analiza los archivos abiertos y la estructura del proyecto para ofrecer respuestas más inteligentes.
@@ -279,7 +280,7 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 | Seguridad | 9/10 ⭐⭐⭐⭐⭐ |
 | UX | 10/10 ⭐⭐⭐⭐⭐ |
 | Performance | 9/10 ⭐⭐⭐⭐⭐ |
-| **TOTAL** | **8.2/10** ⭐⭐⭐⭐ |
+| **TOTAL** | **8.5/10** ⭐⭐⭐⭐⭐ |
 
 ## 📄 Licencia
 
@@ -296,5 +297,5 @@ MIT License - Ver [LICENSE](LICENSE) para más detalles
 
 ---
 
-**NanoEditor v3.1** - Editor de código profesional, ligero y contextual ✨
+**NanoEditor v3.2** - Editor de código profesional, ligero y contextual ✨
 

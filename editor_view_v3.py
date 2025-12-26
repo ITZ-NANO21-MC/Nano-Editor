@@ -52,10 +52,10 @@ class ModernMenuBar(ctk.CTkFrame):
                 ("Find References", app.find_references)
             ]),
             ("Selection", [
-                ("Select All", lambda: app.tab_manager.text_area.event_generate("<<SelectAll>>")),
-                ("Copy", lambda: app.tab_manager.text_area.event_generate("<<Copy>>")),
-                ("Cut", lambda: app.tab_manager.text_area.event_generate("<<Cut>>")),
-                ("Paste", lambda: app.tab_manager.text_area.event_generate("<<Paste>>"))
+                ("Select All (Ctrl+A)", lambda: app.select_all()),
+                ("Copy (Ctrl+C)", lambda: app.copy_text()),
+                ("Cut (Ctrl+X)", lambda: app.cut_text()),
+                ("Paste (Ctrl+V)", lambda: app.paste_text())
             ]),
             ("View", [
                 ("Toggle Terminal", app.toggle_terminal),
@@ -273,6 +273,12 @@ class App(ctk.CTk):
         self.bind("<Control-Shift-A>", lambda e: self.show_ai_assistant())
         self.bind("<Control-Shift-X>", lambda e: self.show_extensions())
         self.bind("<Control-comma>", lambda e: self.show_settings())
+
+        # Atajos de teclado estándar para selección
+        self.bind("<Control-a>", lambda e: self.select_all())
+        self.bind("<Control-c>", lambda e: self.copy_text())
+        self.bind("<Control-x>", self.cut_text())
+        self.bind("<Control-v>", self.paste_text())
 
     def toggle_file_tree(self):
         if self.file_tree_visible:
@@ -585,6 +591,144 @@ Ctrl+Click - Goto Definition"""
                 return self.tab_manager.text_area.get("1.0", "end-1c")
             except (tk.TclError, AttributeError):
                 return ""
+
+    def has_text_selected(self):
+        """Check if there's any text selected in the editor."""
+        try:
+            # Method 1: Try tag_ranges
+            if self.tab_manager.text_area.tag_ranges("sel"):
+                return True
+        
+            # Method 2: Try getting selection directly
+            try:
+                selected = self.tab_manager.text_area.get("sel.first", "sel.last")
+                return bool(selected and selected.strip())
+            except Exception:
+                return False
+            
+        except Exception:
+            return False
+
+    def select_all(self):
+        """Select all text in the current editor."""
+        try:
+            self.tab_manager.text_area.tag_add("sel", "1.0", "end")
+            self.tab_manager.text_area.focus_set()
+        except Exception as e:
+            logger.error(f"Error selecting all text: {e}")
+
+    def copy_text(self, event=None):
+        """Copy selected text to clipboard."""
+        try:
+            # Get selected text using multiple methods
+            selected_text = None
+            
+            # Method 1: Direct get if selection exists
+            try:
+                if self.has_text_selected():
+                    selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
+            except Exception:
+                pass
+        
+            # Method 2: Try selection_get()
+            if not selected_text:
+                try:
+                    selected_text = self.tab_manager.text_area.selection_get()
+                except tk.TclError:
+                    selected_text = None
+            
+            if selected_text and selected_text.strip():
+                self.clipboard_clear()
+                self.clipboard_append(selected_text)
+                self.feedback.show_success("Text copied")
+                return "break"
+            else:
+                self.feedback.show_warning("No text selected")
+                return "break"
+            
+        except Exception as e:
+            logger.error(f"Error copying text: {e}")
+            self.feedback.show_error("Failed to copy")
+        return "break"
+
+    def cut_text(self, event=None):
+        """Cut selected text to clipboard."""
+        try:
+            # Get selected text using multiple methods
+            selected_text = None
+
+            # Method 1: Direct get if selection exists
+            try:
+                if self.has_text_selected():
+                    selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
+            except Exception:
+                pass
+
+            # Method 2: Try selection_get() which works better with tkinter
+            if not selected_text:
+                try:
+                    selected_text = self.tab_manager.text_area.selection_get()
+                except tk.TclError:
+                    selected_text = None
+
+            if selected_text and selected_text.strip():
+                # Copy to clipboard
+                self.clipboard_clear()
+                self.clipboard_append(selected_text)
+
+                # Delete the selected text
+                try:
+                    self.tab_manager.text_area.delete("sel.first", "sel.last")
+                except tk.TclError:
+                    # Fallback delete if selection tags are weird
+                    pass
+
+                self.feedback.show_success("Text cut")
+                return "break"  # Stop event propagation
+
+            else:
+                self.feedback.show_warning("No text selected")
+                return "break"
+        except Exception as e:
+            logger.error(f"Error cutting text: {e}")
+            self.feedback.show_error("Failed to cut")
+        return "break"
+
+    def paste_text(self, event=None):
+        """Paste text from clipboard."""
+        try:
+            # Get clipboard content
+            try:
+                clipboard_text = self.clipboard_get()
+            except tk.TclError:
+                clipboard_text = ""
+
+            if not clipboard_text:
+                self.feedback.show_warning("Clipboard is empty")
+                return "break"
+
+            # Check if there's a selection to replace
+            if self.has_text_selected():
+                # Get the position where the selection starts
+                insert_pos = self.tab_manager.text_area.index("sel.first")
+                # Delete selection first
+                self.tab_manager.text_area.delete("sel.first", "sel.last")
+                # Insert at the saved position
+                self.tab_manager.text_area.insert(insert_pos, clipboard_text)
+            else:
+                # Insert at cursor position
+                cursor_pos = self.tab_manager.text_area.index(ctk.INSERT)
+                self.tab_manager.text_area.insert(cursor_pos, clipboard_text)
+
+            self.feedback.show_success("Text pasted")
+            return "break"  # CRUCIAL: Prevent default paste behavior
+
+        except tk.TclError:
+            self.feedback.show_warning("Clipboard is empty or not accessible")
+        except Exception as e:
+            logger.error(f"Error pasting text: {e}")
+            self.feedback.show_error("Failed to paste")
+        return "break"
 
     def _insert_text_at_cursor(self, text: str) -> None:
         try:
