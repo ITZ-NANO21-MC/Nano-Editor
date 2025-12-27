@@ -43,10 +43,10 @@ class AICompletionPopup:
         self.listbox.pack(fill="both", expand=True)
         
         # Bind events
-        self.listbox.bind("<<ListboxSelect>>", self._on_select)
-        self.listbox.bind("<Return>", self._on_enter)
-        self.listbox.bind("<Escape>", self._hide)
-        self.listbox.bind("<Tab>", self._on_tab)
+        self.listbox.bind("<<ListboxSelect>>", lambda event: self._on_select(event))
+        self.listbox.bind("<Return>", lambda event: self._on_enter(event))
+        self.listbox.bind("<Escape>", lambda event: self._hide(event))
+        self.listbox.bind("<Tab>", lambda event: self._on_tab(event))
         
         # Current suggestions
         self.suggestions: List[CompletionSuggestion] = []

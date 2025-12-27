@@ -32,3 +32,27 @@ def process_ai_code_output(text: str) -> str:
         
     # Si no hay bloque, devuelve el texto original sin espacios extra.
     return text
+
+
+def clean_ai_json_response(text: str) -> str:
+    """
+    Cleans AI response to extract valid JSON content, stripping markdown code blocks.
+    
+    Args:
+        text (str): Raw response text from AI.
+        
+    Returns:
+        str: Cleaned JSON string ready for parsing.
+    """
+    text = text.strip()
+    
+    # Simple regex to find the first JSON-like structure if wrapped in code blocks
+    # This handles ```json ... ``` or just ``` ... ```
+    pattern = r"```(?:json)?\s*(\{.*?\})\s*```"
+    match = re.search(pattern, text, re.DOTALL)
+    
+    if match:
+        return match.group(1)
+        
+    return text
+

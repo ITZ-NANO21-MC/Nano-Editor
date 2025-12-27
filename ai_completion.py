@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from ai_assistant import AIAssistant
 from config import config
 from logger import logger
+from ai_utils import clean_ai_json_response
 
 
 @dataclass
@@ -153,10 +154,15 @@ class AICompletionEngine:
         
         # Wait for result (timeout after 2 seconds)
         start_time = time.time()
-        while not result and time.time() - start_time < 2:
+        while not result and time.time() - start_time < 30:
             time.sleep(0.1)
         
-        return result[0] if result else None
+        if result:
+            logger.info(f"AI Raw Response: {result[0][:200]}...") # Log first 200 chars
+            return result[0]
+        else:
+            logger.warning("AI Completion timed out or returned no result")
+            return None
     
     def _prepare_context(self, 
                         code: str, 
@@ -190,6 +196,7 @@ class AICompletionEngine:
     
     def _build_completion_prompt(self, context: dict) -> str:
         """Build prompt for AI completion."""
+        logger.info(f"Building completion prompt for line {context['line']}, col {context['col']}")
         return f"""Complete the code at line {context['line']}, column {context['col']}.
 
 Current code context:
@@ -214,9 +221,12 @@ Return ONLY valid JSON, no explanations."""
     
     def _parse_ai_response(self, response: str, context: dict) -> List[CompletionSuggestion]:
         """Parse AI response into completion suggestions."""
+        logger.info("Parsing AI completion response")
         try:
             import json
-            data = json.loads(response)
+            # Clean response using utility to handle markdown blocks
+            cleaned_response = clean_ai_json_response(response)
+            data = json.loads(cleaned_response)
             suggestions = []
             
             for item in data.get('suggestions', []):
@@ -229,7 +239,8 @@ Return ONLY valid JSON, no explanations."""
             
             return suggestions
             
-        except (json.JSONDecodeError, ValueError):
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"JSON parse error: {e}. Attempting text extraction on: {response[:100]}...")
             # If JSON parsing fails, try to extract completions from plain text
             return self._extract_completions_from_text(response, context)
     

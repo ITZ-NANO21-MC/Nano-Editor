@@ -4,6 +4,9 @@ import jedi
 from syntax_highlighter import SyntaxHighlighter
 from completion_popup import CompletionPopup
 from async_highlighter import AsyncHighlighter
+from ai_completion import completion_engine
+from ai_completion_popup import AICompletionPopup
+from logger import logger
 
 
 class CodeEditor(customtkinter.CTkTextbox):
@@ -16,6 +19,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.bind("<<Modified>>", self.on_text_changed)
         self.bind("<KeyRelease>", self.on_key_release)
         self.bind("<Control-space>", lambda event: self.show_completions())
+        self.bind("<Control-l>", lambda event: self.show_ai_completions())
         self.bind("<Up>", self._on_completion_up)
         self.bind("<Down>", self._on_completion_down)
         self.bind("<Return>", self._on_completion_select)
@@ -226,6 +230,50 @@ class CodeEditor(customtkinter.CTkTextbox):
             pass # Silently fail
         except Exception:
             pass # Silently fail on other errors
+
+    def show_ai_completions(self, event=None):
+        """Request AI completions and display them in a popup."""
+        try:
+            logger.info("AI Completion requested via shortcut")
+            # Get current code and cursor position
+            code = self.get("1.0", "end-1c")
+            cursor_pos = self.index(customtkinter.INSERT)
+            line, col = map(int, cursor_pos.split('.'))
+
+            # Callback to handle suggestions
+            def _callback(suggestions):
+                logger.info(f"AI Completion callback received {len(suggestions)} suggestions")
+                def _show():
+                    # Compute screen coordinates for popup
+                    bbox = self.bbox(customtkinter.INSERT)
+                    if not bbox:
+                        return
+                    x = self.winfo_rootx() + bbox[0]
+                    y = self.winfo_rooty() + bbox[1] + bbox[3]
+                    
+                    # Create popup and show it
+                    # Note: We pass a simple insert callback. 
+                    # Advanced replacement logic could be added here if needed.
+                    popup = AICompletionPopup(
+                        self.master, 
+                        self, 
+                        lambda txt: self.insert(customtkinter.INSERT, txt)
+                    )
+                    popup.show(suggestions, x, y)
+                
+                # Ensure UI updates happen in main thread
+                self.after(0, _show)
+
+            # Request completion from engine (asynchronous)
+            completion_engine.request_completion(
+                code=code,
+                cursor_line=line,
+                cursor_col=col,
+                file_path=self.file_path,
+                callback=_callback,
+            )
+        except Exception:
+            pass  # Silently ignore errors
 
     def yview(self, *args):
         """Override yview to synchronize with line numbers."""
