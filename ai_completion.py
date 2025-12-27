@@ -158,8 +158,15 @@ class AICompletionEngine:
             time.sleep(0.1)
         
         if result:
-            logger.info(f"AI Raw Response: {result[0][:200]}...") # Log first 200 chars
-            return result[0]
+            response_text = result[0]
+            logger.info(f"AI Raw Response: {response_text[:200]}...") # Log first 200 chars
+            
+            # Check for API errors
+            if response_text.startswith("Error:") or response_text.startswith("API Error:") or "429" in response_text:
+                logger.warning(f"AI API Error detected: {response_text[:100]}...")
+                return None
+                
+            return response_text
         else:
             logger.warning("AI Completion timed out or returned no result")
             return None
@@ -206,7 +213,8 @@ Current code context:
 
 The cursor is at line {context['line']}, after: "{context['prefix']}"
 
-Suggest 3-5 possible completions for what comes next. Format as JSON:
+IMPORTANT: Provide COMPLETE code blocks. If completing a function, class, or loop, provide the FULL implementation, not just the next line.
+Suggest 3-5 possible completions. Format as JSON:
 {{
   "suggestions": [
     {{

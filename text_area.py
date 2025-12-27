@@ -208,7 +208,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Apply highlighting tokens in main thread."""
         self.after(0, lambda: self.highlighter.apply_tokens(tokens))
 
-    def show_completions(self):
+    def show_completions(self, event=None):
         """Get and show completions from Jedi."""
         try:
             if self.completion_popup:
