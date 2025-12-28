@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from typing import Callable, Optional
 from ai_assistant import AIAssistant
+from ai_utils import process_ai_code_output
 
 
 class AIFileOperations:
@@ -56,6 +57,9 @@ Return ONLY the complete modified code, no explanations."""
             
             def on_response(modified_code):
                 try:
+                    # Clean code
+                    modified_code = process_ai_code_output(modified_code)
+                    
                     # Backup original
                     backup_path = path.with_suffix(path.suffix + '.backup')
                     backup_path.write_text(current_content)
@@ -95,6 +99,9 @@ Return the COMPLETE file with the new function added in the appropriate place.""
             
             def on_response(modified_code):
                 try:
+                    # Clean code
+                    modified_code = process_ai_code_output(modified_code)
+                    
                     backup_path = path.with_suffix(path.suffix + '.backup')
                     backup_path.write_text(current_content)
                     path.write_text(modified_code)

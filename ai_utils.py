@@ -20,9 +20,9 @@ def process_ai_code_output(text: str) -> str:
     """
     text = text.strip()
     
-    # Patrón para detectar ```python\n...```, ```\n...```, etc.
-    # Soporta ´´´, ``` y ''' como delimitadores.
-    pattern = r"^(?:```|'''|´´´)(?:[a-zA-Z]*)?\n?(.*?)\n?(?:```|'''|´´´)$"
+    # Patrón para detectar bloques de código markdown ```...```, '''...''', ´´´...´´´
+    # Busca el primer bloque de código válido, ignorando el texto anterior o posterior.
+    pattern = r"(?:```|'''|´´´)(?:[a-zA-Z0-9+\-]*)?\n?(.*?)\n?(?:```|'''|´´´)"
     
     match = re.search(pattern, text, re.DOTALL)
     
@@ -30,7 +30,12 @@ def process_ai_code_output(text: str) -> str:
         # Si se encuentra un bloque, devuelve el contenido limpio.
         return match.group(1).strip()
         
-    # Si no hay bloque, devuelve el texto original sin espacios extra.
+    # Fallback: Si no hay bloques de código explícitos, intenta limpiar comillas simples si envuelven todo el texto
+    # Esto maneja casos donde la IA devuelve 'code' en lugar de ```code```
+    if len(text) > 2 and ((text.startswith("'") and text.endswith("'")) or (text.startswith('"') and text.endswith('"')) or (text.startswith("´") and text.endswith("´"))):
+         return text[1:-1].strip()
+
+    # Si no hay bloque, devuelve el texto original
     return text
 
 

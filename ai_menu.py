@@ -81,6 +81,7 @@ class AIResultDialog(customtkinter.CTkToplevel):
         self.clipboard_clear()
         self.clipboard_append(text)
         messagebox.showinfo("Copied", "Result copied to clipboard")
+        self.destroy()
     
     def insert_result(self):
         if self.insert_callback:

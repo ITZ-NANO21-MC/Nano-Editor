@@ -26,14 +26,15 @@ class TestGeminiClientStreaming(unittest.TestCase):
     """Test the streaming functionality of the Gemini client using mocks."""
 
     def setUp(self):
-        """Create a fake 'google.generativeai' module in sys.modules."""
+        """Create a fake 'google.genai' module in sys.modules."""
         self.mock_genai_module = MagicMock()
-        sys.modules['google.generativeai'] = self.mock_genai_module
-        sys.modules['google'] = MagicMock(generativeai=self.mock_genai_module)
+        self.mock_genai_module.types = MagicMock()
+        sys.modules['google.genai'] = self.mock_genai_module
+        sys.modules['google'] = MagicMock(genai=self.mock_genai_module)
 
     def tearDown(self):
         """Remove the fake module after tests."""
-        del sys.modules['google.generativeai']
+        del sys.modules['google.genai']
         del sys.modules['google']
 
     @patch('gemini_client.config')
@@ -46,9 +47,10 @@ class TestGeminiClientStreaming(unittest.TestCase):
         mock_chunk2 = MagicMock()
         mock_chunk2.text = "World"
         
-        mock_model = MagicMock()
-        mock_model.generate_content.return_value = [mock_chunk1, mock_chunk2]
-        self.mock_genai_module.GenerativeModel.return_value = mock_model
+        # Mock Client().models.generate_content_stream
+        mock_client = MagicMock()
+        mock_client.models.generate_content_stream.return_value = [mock_chunk1, mock_chunk2]
+        self.mock_genai_module.Client.return_value = mock_client
 
         client = GeminiClient()
         query = "say hello"
@@ -56,15 +58,17 @@ class TestGeminiClientStreaming(unittest.TestCase):
         result = "".join(list(response_generator))
 
         self.assertEqual(result, "Hello World")
-        mock_model.generate_content.assert_called_once_with(query, stream=True)
+        self.mock_genai_module.Client.assert_called_with(api_key='fake_api_key')
+        mock_client.models.generate_content_stream.assert_called_once()
 
     @patch('gemini_client.config')
     def test_streaming_api_error(self, mock_config):
         """Test an API error during streaming."""
         mock_config.get.return_value = 'fake_api_key'
-        mock_model = MagicMock()
-        mock_model.generate_content.side_effect = Exception("API Failure")
-        self.mock_genai_module.GenerativeModel.return_value = mock_model
+        
+        mock_client = MagicMock()
+        mock_client.models.generate_content_stream.side_effect = Exception("API Failure")
+        self.mock_genai_module.Client.return_value = mock_client
 
         client = GeminiClient()
         query = "test"

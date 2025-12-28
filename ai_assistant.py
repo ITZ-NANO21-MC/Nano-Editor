@@ -5,6 +5,7 @@ import os
 from typing import Callable, Optional
 from config import config
 from logger import logger
+from ai_utils import process_ai_code_output
 
 
 class AIAssistant:
@@ -22,7 +23,8 @@ class AIAssistant:
             # Try Python API first
             if self.use_api:
                 try:
-                    import google.generativeai as genai
+                    from google import genai
+                    from google.genai import types
 
                     api_key = config.get('GEMINI_API_KEY')
                     if not api_key:
@@ -30,20 +32,26 @@ class AIAssistant:
                         callback("Error: GEMINI_API_KEY not configured\n\nCreate .env file with:\nGEMINI_API_KEY=your-api-key")
                         return
 
-                    genai.configure(api_key=api_key)
-                    model = genai.GenerativeModel(self.model_name)
-                    response = model.generate_content(prompt)
-                    logger.debug(f"AI response received: {len(response.text)} chars")
-                    callback(response.text)
+                    client = genai.Client(api_key=api_key)
+                    response = client.models.generate_content(
+                        model=self.model_name,
+                        contents=prompt
+                    )
+                    
+                    if response.text:
+                        logger.debug(f"AI response received: {len(response.text)} chars")
+                        callback(response.text)
+                    else:
+                        callback("")
                     return
 
                 except ImportError:
-                    logger.error("google-generativeai not installed")
-                    callback("Error: google-generativeai not installed\nInstall with: pip install google-generativeai")
+                    logger.error("google-genai not installed")
+                    callback("Error: google-genai not installed\nInstall with: pip install google-genai")
                     return
                 except Exception as e:
                     logger.error(f"AI API error: {e}")
-                    callback(f"API Error: {str(e)}\n\nTry: pip install --upgrade google-generativeai")
+                    callback(f"API Error: {str(e)}\n\nTry: pip install google-genai")
                     return
 
             # Fallback to CLI (deprecated)
@@ -81,7 +89,7 @@ Complete this code. Return ONLY the completion, no explanations:
 {code}
 
 Complete from line {cursor_line}. Provide the next 1-3 lines of code."""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def explain_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Explain selected code."""
@@ -103,7 +111,7 @@ Provide a brief explanation of what it does."""
 Generate {language} code for: {description}
 
 Return ONLY the code, no explanations or markdown."""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def refactor_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Refactor and improve code."""
@@ -114,7 +122,7 @@ Refactor this code to improve readability and efficiency. Return ONLY the refact
 ```
 {code}
 ```"""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def fix_errors(self, code: str, error_msg: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Fix code errors."""
@@ -128,7 +136,7 @@ Code:
 ```
 
 Error: {error_msg}"""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def generate_docstring(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Generate documentation for code."""
@@ -139,7 +147,7 @@ Generate a docstring for this function/class. Return ONLY the docstring:
 ```
 {code}
 ```"""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def optimize_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Suggest optimizations."""
@@ -152,7 +160,7 @@ Analyze this code and suggest optimizations:
 ```
 
 Provide specific suggestions."""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
 
     def translate_code(self, code: str, from_lang: str, to_lang: str, callback: Callable[[str], None], project_context: str = "") -> None:
         """Translate code between languages."""
@@ -163,4 +171,4 @@ Translate this {from_lang} code to {to_lang}. Return ONLY the translated code:
 ```
 {code}
 ```"""
-        self._run_gemini_command(prompt, callback)
+        self._run_gemini_command(prompt, lambda response: callback(process_ai_code_output(response)))
