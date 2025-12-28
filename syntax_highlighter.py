@@ -1,9 +1,9 @@
 from pygments import lex
-from pygments.lexers import guess_lexer_for_filename, TextLexer
+from pygments.lexers.special import TextLexer
+from pygments.lexers import guess_lexer_for_filename, get_lexer_by_name
 from pygments.styles import get_style_by_name
 from pygments.util import ClassNotFound
 import tkinter
-import re
 
 
 class SyntaxHighlighter:
@@ -18,35 +18,45 @@ class SyntaxHighlighter:
             self.style = get_style_by_name("default")
             self.style_name = "default"
         
-        # Mapeo básico de colores para empezar
-        self.token_colors = {
-            'Token.Keyword': '#ff79c6',
-            'Token.Name': '#50fa7b',
-            'Token.String': '#f1fa8c',
-            'Token.Comment': '#6272a4',
-            'Token.Operator': '#ff79c6',
-            'Token.Number': '#bd93f9',
-            'Token.Punctuation': '#f8f8f2',
-        }
+        print(f"[DEBUG] SyntaxHighlighter initialized with style: {self.style_name}")
         
         self.configure_tags()
 
     def configure_tags(self):
-        """Configura etiquetas básicas para resaltado."""
+        """Configura etiquetas dinámicamente basadas en el estilo de Pygments."""
         try:
-            # Configurar etiquetas con colores básicos
-            for token_type, color in self.token_colors.items():
-                tag_name = token_type.replace('.', '_')
-                try:
-                    self.text_widget.tag_config(
-                        tag_name,
-                        foreground=color
-                    )
-                except tkinter.TclError:
-                    pass
-                    
+            from pygments.token import Token
+            
+            # Tipos de tokens comunes a configurar
+            tokens_to_style = [
+                Token.Keyword, Token.Keyword.Declaration, Token.Keyword.Namespace,
+                Token.Name, Token.Name.Function, Token.Name.Class, Token.Name.Variable,
+                Token.String, Token.Comment, Token.Operator, Token.Number,
+                Token.Punctuation, Token.Literal, Token.Text
+            ]
+            
+            for token in tokens_to_style:
+                tag_name = str(token).replace('.', '_')
+                color = self._get_style_color(token)
+                
+                if color:
+                    try:
+                        self.text_widget.tag_config(tag_name, foreground=color)
+                    except tkinter.TclError:
+                        pass
+                        
         except Exception as e:
-            print(f"Error configurando etiquetas: {e}")
+            print(f"[ERROR] Error configurando etiquetas: {e}")
+
+    def _get_style_color(self, token):
+        """Extrae el color hexadecimal para un token dado el estilo actual."""
+        try:
+            style_for_token = self.style.style_for_token(token)
+            if style_for_token and 'color' in style_for_token and style_for_token['color']:
+                return f"#{style_for_token['color']}"
+        except Exception:
+            pass
+        return None
 
     def highlight(self, file_path):
         """Resalta el texto sincrónicamente."""
@@ -60,7 +70,10 @@ class SyntaxHighlighter:
             self.clear_highlighting()
             
             try:
-                lexer = guess_lexer_for_filename(file_path, data)
+                if file_path.endswith('.env'):
+                    lexer = get_lexer_by_name('bash')
+                else:
+                    lexer = guess_lexer_for_filename(file_path, data)
             except ClassNotFound:
                 lexer = TextLexer()
             

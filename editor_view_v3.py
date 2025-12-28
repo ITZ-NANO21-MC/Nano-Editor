@@ -382,6 +382,11 @@ class App(ctk.CTk):
         if hasattr(self, 'file_tree'):
             self.file_tree.update_tree_theme()
 
+    def set_syntax_theme(self, theme):
+        """Update syntax highlighting theme."""
+        print(f"[DEBUG] App: Setting syntax theme to: {theme}")
+        self.tab_manager.text_area.set_syntax_theme(theme)
+
     def update_font_size(self, size):
         """
         Updates the font size of the editor text area and synchronizes line numbers.

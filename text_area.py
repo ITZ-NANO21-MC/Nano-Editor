@@ -208,6 +208,13 @@ class CodeEditor(customtkinter.CTkTextbox):
     def highlight_text(self, *args):
         if self.file_path:
             self.highlighter.highlight(self.file_path)
+            
+    def set_syntax_theme(self, theme_name):
+        """Update syntax highlighting theme."""
+        print(f"[DEBUG] CodeEditor: Updating highlighter with theme: {theme_name}")
+        self.highlighter = SyntaxHighlighter(self, style=theme_name)
+        if self.file_path:
+            self.highlight_text()
     
     def highlight_text_async(self):
         """Async highlighting with debouncing."""

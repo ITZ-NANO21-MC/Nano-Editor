@@ -2,6 +2,7 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkfontawesome import icon_to_image
+from pygments.styles import get_all_styles
 
 
 class VSCodeSidebar(ctk.CTkFrame):
@@ -334,6 +335,22 @@ class SettingsPanel(ctk.CTkFrame):
         )
         self.font_slider.pack(fill="x", pady=5)
         
+        # Syntax Highlighting
+        ctk.CTkLabel(settings_frame, text="Syntax Highlighting", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
+        
+        # Get styles and sort them
+        styles = list(get_all_styles())
+        styles.sort()
+        
+        self.style_var = ctk.StringVar(value="monokai")
+        self.style_menu = ctk.CTkComboBox(
+            settings_frame, values=styles,
+            variable=self.style_var,
+            command=self.update_style,
+            state="readonly"
+        )
+        self.style_menu.pack(fill="x", pady=5)
+        
         # Panels visibility
         ctk.CTkLabel(settings_frame, text="Panels", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
         
@@ -377,3 +394,8 @@ class SettingsPanel(ctk.CTkFrame):
         """
         size = int(value)
         self.app.update_font_size(size)
+
+    def update_style(self, choice):
+        """Update syntax highlighting style."""
+        print(f"[DEBUG] Sidebar: Style selected: {choice}")
+        self.app.set_syntax_theme(choice)
