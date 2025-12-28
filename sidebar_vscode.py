@@ -341,6 +341,12 @@ class SettingsPanel(ctk.CTkFrame):
         # Get styles and sort them
         styles = list(get_all_styles())
         styles.sort()
+        styles = styles[:12]  # Mostrar solo los primeros 12
+        
+        # Asegurar que monokai esté en la lista si es el default
+        if "monokai" not in styles:
+            styles.append("monokai")
+            styles.sort()
         
         self.style_var = ctk.StringVar(value="monokai")
         self.style_menu = ctk.CTkComboBox(
@@ -350,6 +356,13 @@ class SettingsPanel(ctk.CTkFrame):
             state="readonly"
         )
         self.style_menu.pack(fill="x", pady=5)
+        
+        # Bindings for navigation
+        self.style_menu.bind("<Up>", self.on_style_key)
+        self.style_menu.bind("<Down>", self.on_style_key)
+        self.style_menu.bind("<MouseWheel>", self.on_style_scroll)
+        self.style_menu.bind("<Button-4>", self.on_style_scroll) # Linux scroll up
+        self.style_menu.bind("<Button-5>", self.on_style_scroll) # Linux scroll down
         
         # Panels visibility
         ctk.CTkLabel(settings_frame, text="Panels", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
@@ -399,3 +412,41 @@ class SettingsPanel(ctk.CTkFrame):
         """Update syntax highlighting style."""
         print(f"[DEBUG] Sidebar: Style selected: {choice}")
         self.app.set_syntax_theme(choice)
+
+    def on_style_key(self, event):
+        """Handle arrow key navigation in style combobox."""
+        styles = self.style_menu.cget("values")
+        current = self.style_var.get()
+        if current in styles:
+            idx = styles.index(current)
+            if event.keysym == "Up":
+                new_idx = max(0, idx - 1)
+            else:
+                new_idx = min(len(styles) - 1, idx + 1)
+            
+            new_style = styles[new_idx]
+            self.style_var.set(new_style)
+            self.update_style(new_style)
+        return "break"
+
+    def on_style_scroll(self, event):
+        """Handle mouse wheel navigation in style combobox."""
+        styles = self.style_menu.cget("values")
+        current = self.style_var.get()
+        
+        if current in styles:
+            idx = styles.index(current)
+            
+            # Determine scroll direction
+            delta = 0
+            if event.num == 4 or (hasattr(event, 'delta') and event.delta > 0):
+                delta = -1 # Scroll up
+            elif event.num == 5 or (hasattr(event, 'delta') and event.delta < 0):
+                delta = 1 # Scroll down
+            
+            if delta != 0:
+                new_idx = max(0, min(len(styles) - 1, idx + delta))
+                new_style = styles[new_idx]
+                self.style_var.set(new_style)
+                self.update_style(new_style)
+        return "break"
