@@ -104,5 +104,7 @@ def create_ai_menu(menu_bar, ai_actions):
     ai_menu.add_separator()
     ai_menu.add_command(label="Generate Docstring", command=ai_actions["docstring"])
     ai_menu.add_command(label="Translate Code...", command=ai_actions["translate"])
+    ai_menu.add_separator()
+    ai_menu.add_command(label="Create Project Structure...", command=ai_actions["create_project"])
     
     return ai_menu

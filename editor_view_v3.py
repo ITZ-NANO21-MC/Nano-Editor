@@ -88,6 +88,7 @@ class ModernMenuBar(ctk.CTkFrame):
                 None,
                 ("Generate Docstring", app.ai_generate_docstring),
                 ("Translate Code...", app.ai_translate_code),
+                ("Create Project...", app.ai_create_project),
                 None,
                 ("Create File...", app.ai_create_file),
                 ("Modify Current File...", app.ai_modify_current_file),
@@ -229,7 +230,8 @@ class App(ctk.CTk):
         self.gemini_panel = GeminiPanel(
             content,
             self.gemini_client,
-            context_provider=self._get_project_context
+            context_provider=self._get_project_context,
+            app=self
         )
         self.gemini_panel.grid(row=2, column=2, sticky="nsew", padx=5, pady=5)
         
@@ -948,6 +950,20 @@ Ctrl+Click - Goto Definition"""
         AIActionDialog(
             self, "Add Function",
             "Describe the function to add:",
+            on_description
+        ).grab_set()
+
+    def ai_create_project(self) -> None:
+        """Create a complete project structure from description."""
+        def on_description(description: str) -> None:
+            self.status_bar.set_file_path("AI: Creating project structure...")
+            self.ai_file_ops.create_project_structure(
+                description,
+                lambda result: messagebox.showinfo("AI Project Creation", result)
+            )
+        AIActionDialog(
+            self, "Create Project",
+            "Describe the project you want to create (e.g., 'A simple Flask app with REST API'):",
             on_description
         ).grab_set()
     

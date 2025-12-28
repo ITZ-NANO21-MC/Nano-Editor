@@ -54,6 +54,7 @@ class AIAssistantPanel(ctk.CTkFrame):
         # File Operations Section
         self._create_section(self.content, "FILE OPERATIONS", [
             ("Create File", "Create new file with AI", app.ai_create_file),
+            ("Create Project", "Create project structure", app.ai_create_project),
             ("Modify File", "Modify current file", app.ai_modify_current_file),
             ("Add Function", "Add function to file", app.ai_add_function),
         ])

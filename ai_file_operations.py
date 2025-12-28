@@ -1,10 +1,11 @@
 """AI-powered file operations for automatic code generation and modification."""
 import os
 import json
+import datetime
 from pathlib import Path
 from typing import Callable, Optional
 from ai_assistant import AIAssistant
-from ai_utils import process_ai_code_output
+from ai_utils import process_ai_code_output, clean_ai_json_response
 
 
 class AIFileOperations:
@@ -128,22 +129,40 @@ Return a JSON with this format:
 
 Return ONLY valid JSON."""
         
-        def on_response(response: str) -> None:
-            try:
-                data = json.loads(response)
-                created = []
-                
-                for file_info in data.get('files', []):
-                    filepath = self.workspace / file_info['path']
-                    filepath.parent.mkdir(parents=True, exist_ok=True)
-                    filepath.write_text(file_info['content'])
-                    created.append(str(filepath))
-                
-                callback(f"✅ Created {len(created)} files:\n" + "\n".join(f"  - {f}" for f in created))
-            except Exception as e:
-                callback(f"❌ Error creating project: {e}")
+        # Determine folder name for the button action too
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        folder_name = f"project_{timestamp}"
         
-        self.ai._run_gemini_command(prompt, on_response)
+        self.ai._run_gemini_command(prompt, lambda resp: self.apply_project_structure_from_response(resp, lambda res, files: callback(res), folder_name=folder_name))
+    
+    def apply_project_structure_from_response(self, response: str, callback: Callable[[str, Optional[list]], None], folder_name: Optional[str] = None) -> None:
+        """Parse AI response and create project files."""
+        try:
+            # Clean JSON response if wrapped in markdown
+            cleaned_response = clean_ai_json_response(response)
+            data = json.loads(cleaned_response)
+            files = data.get('files', [])
+            created = []
+            
+            # Base path for this project
+            base_path = self.workspace
+            if folder_name:
+                base_path = self.workspace / folder_name
+                base_path.mkdir(parents=True, exist_ok=True)
+            
+            for file_info in files:
+                filepath = base_path / file_info['path']
+                filepath.parent.mkdir(parents=True, exist_ok=True)
+                filepath.write_text(file_info['content'])
+                created.append(str(filepath))
+            
+            summary = f"✅ Created {len(created)} files"
+            if folder_name:
+                summary += f" in directory: {folder_name}"
+            
+            callback(f"{summary}:\n" + "\n".join(f"  - {f}" for f in created), files)
+        except Exception as e:
+            callback(f"❌ Error creating project: {e}", None)
     
     def _detect_language_from_filename(self, filename: str) -> str:
         """Detect programming language from filename."""
