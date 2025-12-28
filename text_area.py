@@ -20,10 +20,10 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.bind("<KeyRelease>", self.on_key_release)
         self.bind("<Control-space>", lambda event: self.show_completions())
         self.bind("<Control-l>", lambda event: self.show_ai_completions())
-        self.bind("<Up>", self._on_completion_up)
-        self.bind("<Down>", self._on_completion_down)
-        self.bind("<Return>", self._on_completion_select)
-        self.bind("<Tab>", self._on_completion_select)
+        self.bind("<Up>", lambda event: self._on_completion_up(event))
+        self.bind("<Down>", lambda event: self._on_completion_down(event))
+        self.bind("<Return>", lambda event: self._on_completion_select(event))
+        self.bind("<Tab>", lambda event: self._on_completion_select(event))
         self.bind("<Escape>", self._on_completion_hide)
         
         # Vincular eventos de scroll del mouse y configuración
@@ -147,6 +147,7 @@ class CodeEditor(customtkinter.CTkTextbox):
             return "break"
             
         if self.ghost_text_active:
+            logger.info("Tab/Enter pressed: Accepting ghost text")
             self.accept_ghost_text()
             return "break"
 
@@ -157,6 +158,7 @@ class CodeEditor(customtkinter.CTkTextbox):
             return "break"
             
         if self.ghost_text_active:
+            logger.info("Escape pressed: Clearing ghost text")
             self.clear_ghost_text()
             return "break"
 
@@ -221,7 +223,15 @@ class CodeEditor(customtkinter.CTkTextbox):
     
     def _apply_highlighting(self, tokens):
         """Apply highlighting tokens in main thread."""
-        self.after(0, lambda: self.highlighter.apply_tokens(tokens))
+        def _apply():
+            self.highlighter.apply_tokens(tokens)
+            # Re-apply ghost tag priority if active
+            if self.ghost_text_active:
+                try:
+                    self.tag_raise("ghost")
+                except tkinter.TclError:
+                    pass
+        self.after(0, _apply)
 
     def show_completions(self, event=None):
         """Get and show completions from Jedi."""
@@ -369,15 +379,20 @@ class CodeEditor(customtkinter.CTkTextbox):
         try:
             # Only show if cursor is at end of line? Or just insert.
             # For simplicity, insert at cursor.
-            self.insert(customtkinter.INSERT, text, "ghost")
+            self.insert(customtkinter.INSERT, text)
+            
+            logger.info(f"Showing ghost text: '{text[:20]}...'")
+            
+            # Apply ghost tag explicitly
+            start_index = f"{customtkinter.INSERT}-{len(text)}c"
+            end_index = customtkinter.INSERT
+            self.tag_add("ghost", start_index, end_index)
+            self.tag_raise("ghost") # Ensure it stays on top of syntax highlighting
+            
             self.ghost_text_active = True
             
-            # Position cursor back to start of ghost text?
-            # Usually ghost text is ahead of cursor. cursor should stay BEFORE ghost text.
-            # Tkinter insert moves cursor to end. We need to move it back.
-            # Calculate length of inserted text
-            # We need to move cursor back by len(text) characters
-            self.mark_set(customtkinter.INSERT, f"{customtkinter.INSERT}-{len(text)}c")
+            # Position cursor back to start of ghost text
+            self.mark_set(customtkinter.INSERT, start_index)
         except Exception as e:
             logger.error(f"Error showing ghost text: {e}")
 
@@ -385,6 +400,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Remove ghost text."""
         if not self.ghost_text_active:
             return
+        logger.info("Clearing ghost text")
         try:
             self.delete("ghost.first", "ghost.last")
             self.ghost_text_active = False
@@ -395,6 +411,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Convert ghost text to real text."""
         if not self.ghost_text_active:
             return
+        logger.info("Accepting ghost text")
         try:
             # Get text content
             text = self.get("ghost.first", "ghost.last")
