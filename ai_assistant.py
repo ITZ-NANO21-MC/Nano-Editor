@@ -33,8 +33,9 @@ class AIAssistant:
                         return
 
                     client = genai.Client(api_key=api_key)
+                    model_to_use = config.get('AI_MODEL', 'models/gemini-2.0-flash')
                     response = client.models.generate_content(
-                        model=self.model_name,
+                        model=model_to_use,
                         contents=prompt
                     )
                     

@@ -381,6 +381,50 @@ class SettingsPanel(ctk.CTkFrame):
         )
         self.ai_cb.pack(anchor="w", pady=2)
 
+        # AI Model Selection
+        ctk.CTkLabel(settings_frame, text="AI Model", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
+        
+        from config import config
+        current_model = config.get('AI_MODEL', 'models/gemini-2.0-flash')
+        
+        models = [
+            "models/gemini-2.5-pro",
+            "models/gemini-2.5-flash",
+            "models/gemini-2.0-flash",
+            "models/gemini-3-pro-preview",
+            "models/gemini-3-flash-preview",
+            "models/gemini-2.0-flash-lite",
+            "models/gemini-2.0-flash-exp",
+            "models/gemini-2.5-flash-lite",
+            "models/gemini-pro-latest",
+            "models/gemini-flash-latest"
+        ]
+        
+        # Ensure current model is in list
+        if current_model not in models:
+            models.insert(0, current_model)
+            
+        self.ai_model_var = ctk.StringVar(value=current_model)
+        self.ai_model_menu = ctk.CTkComboBox(
+            settings_frame, values=models,
+            variable=self.ai_model_var,
+            command=self.update_ai_model,
+            state="readonly"
+        )
+        self.ai_model_menu.pack(fill="x", pady=5)
+
+    def update_ai_model(self, choice):
+        """Update and save the AI model configuration."""
+        from config import config
+        config.set('AI_MODEL', choice)
+        if config.save():
+            print(f"[DEBUG] AI Model updated to: {choice}")
+            if hasattr(self.app, 'feedback'):
+                self.app.feedback.show_success(f"Model updated: {choice.split('/')[-1]}")
+        else:
+            if hasattr(self.app, 'feedback'):
+                self.app.feedback.show_error("Failed to save .env configuration")
+
     def update_panels(self):
         """
         Updates the visibility of terminal and AI panels based on checkbox states.
