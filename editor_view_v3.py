@@ -18,6 +18,9 @@ from project_context import ProjectContext
 from project_search import ProjectSearchWindow
 from goto_definition import GotoDefinition, setup_goto_definition_bindings
 from ai_utils import process_ai_code_output
+from ai_handler import AIHandler
+from file_handler import FileHandler
+from menu_bar import ModernMenuBar
 import os
 import shlex
 import shutil
@@ -26,128 +29,7 @@ from logger import logger
 from visual_feedback import VisualFeedback
 
 
-class ModernMenuBar(ctk.CTkFrame):
-    """Modern horizontal menu bar."""
-    def __init__(self, master, app):
-        super().__init__(master, height=35, fg_color=("#E5E5E5", "#1E1E1E"))
-        self.app = app
-        self.pack_propagate(False)
-        
-        menus = [
-            ("File", [
-                ("New Tab", lambda: app.tab_manager.new_tab()),
-                ("Open", app.open_file),
-                ("Save", app.save_file),
-                ("Save As", app.save_file_as),
-                None,
-                ("Close Tab", lambda: app.tab_manager.close_tab(app.tab_manager.current_tab_index)),
-                None,
-                ("Exit", app.quit)
-            ]),
-            ("Edit", [
-                ("Find & Replace", app.open_find_replace_window),
-                ("Search in Project", app.open_project_search),
-                None,
-                ("Goto Definition", app.handle_goto_definition),
-                ("Find References", app.find_references)
-            ]),
-            ("Selection", [
-                ("Select All (Ctrl+A)", lambda: app.select_all()),
-                ("Copy (Ctrl+C)", lambda: app.copy_text()),
-                ("Cut (Ctrl+X)", lambda: app.cut_text()),
-                ("Paste (Ctrl+V)", lambda: app.paste_text())
-            ]),
-            ("View", [
-                ("Toggle Terminal", app.toggle_terminal),
-                ("Toggle AI Panel", app.toggle_gemini),
-                ("Toggle File Tree", app.toggle_file_tree),
-                None,
-                ("Light Theme", lambda: app.set_theme("light")),
-                ("Dark Theme", lambda: app.set_theme("dark"))
-            ]),
-            ("Go", [
-                ("Goto Definition (F12)", app.handle_goto_definition),
-                ("Find References", app.find_references)
-            ]),
-            ("Run", [
-                ("Run in Terminal", app.run_current_file),
-                ("Clear Terminal", lambda: app.terminal.clear_terminal())
-            ]),
-            ("Terminal", [
-                ("Show Terminal", lambda: app.terminal.grid()),
-                ("Hide Terminal", lambda: app.terminal.grid_remove()),
-                ("Clear", lambda: app.terminal.clear_terminal())
-            ]),
-            ("AI Assistant", [
-                ("Explain Code", app.ai_explain_code),
-                ("Generate Code...", app.ai_generate_code),
-                None,
-                ("Refactor Code", app.ai_refactor_code),
-                ("Fix Errors...", app.ai_fix_errors),
-                ("Optimize Code", app.ai_optimize_code),
-                None,
-                ("Generate Docstring", app.ai_generate_docstring),
-                ("Translate Code...", app.ai_translate_code),
-                ("Create Project...", app.ai_create_project),
-                None,
-                ("Create File...", app.ai_create_file),
-                ("Modify Current File...", app.ai_modify_current_file),
-                ("Add Function...", app.ai_add_function)
-            ]),
-            ("Help", [
-                ("About", app.show_about),
-                ("Shortcuts", app.show_shortcuts)
-            ])
-        ]
-        
-        # Diccionario para almacenar botones y sus menús
-        self.menu_buttons = {}
-        
-        for label, items in menus:
-            btn = ctk.CTkButton(
-                self, text=label, width=60, height=28,
-                fg_color="transparent", hover_color=("#D0D0D0", "#2D2D2D"),
-                text_color=("#333333", "#CCCCCC"),
-                corner_radius=4, font=("Segoe UI", 12)
-            )
-            btn.pack(side="left", padx=2, pady=3)
-            
-            # Almacenar referencia al botón y sus items
-            self.menu_buttons[btn] = items
-            
-            # Vincular evento al botón específico
-            btn.configure(command=lambda b=btn: self.show_dropdown(b))
-
-    def show_dropdown(self, button):
-        """Show dropdown menu at the specific button location."""
-        # Obtener los items del menú para este botón
-        items = self.menu_buttons.get(button)
-        if not items:
-            return
-        
-        # Calcular posición del botón en pantalla
-        button_x = button.winfo_rootx()
-        button_y = button.winfo_rooty() + button.winfo_height()
-        
-        # Crear menú desplegable
-        menu = tk.Menu(self, tearoff=0, font=("Segoe UI", 10))
-        
-        # Añadir items al menú
-        for item in items:
-            if item is None:
-                menu.add_separator()
-            else:
-                label, command = item
-                menu.add_command(label=label, command=command)
-        
-        try:
-            # Mostrar menú en la posición correcta
-            menu.tk_popup(button_x, button_y)
-        finally:
-            menu.grab_release()
-
-
-class App(ctk.CTk):
+class App(ctk.CTk, AIHandler, FileHandler):
     def __init__(self):
         super().__init__()
         
@@ -400,74 +282,6 @@ class App(ctk.CTk):
         if self.tab_manager.line_numbers:
             self.tab_manager.line_numbers.redraw()
 
-    def open_file(self, file_path=None):
-        if not file_path:
-            file_path = filedialog.askopenfilename()
-        
-        if not file_path:
-            return
-        
-        # Validate file path
-        if not isinstance(file_path, str):
-            logger.error("Invalid file path type")
-            messagebox.showerror("Error", "Invalid file path")
-            return
-        
-        if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            messagebox.showerror("Error", f"File not found: {file_path}")
-            return
-        
-        if not os.path.isfile(file_path):
-            logger.error(f"Not a file: {file_path}")
-            messagebox.showerror("Error", f"Not a file: {file_path}")
-            return
-        
-        # Check file size (limit to 10MB)
-        try:
-            file_size = os.path.getsize(file_path)
-            if file_size > 10 * 1024 * 1024:
-                logger.warning(f"Large file: {file_size // (1024*1024)}MB")
-                if not messagebox.askyesno("Large File", f"File is {file_size // (1024*1024)}MB. Open anyway?"):
-                    return
-        except OSError as e:
-            logger.error(f"Cannot check file size: {e}")
-            messagebox.showerror("Error", f"Cannot check file size: {e}")
-            return
-        
-        try:
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            
-            tab_index = self.tab_manager.new_tab(file_path)
-            tab = self.tab_manager.tabs[tab_index]
-            
-            tab.file_path = file_path
-            tab.content = content
-            self.tab_manager.switch_tab(tab_index)
-            
-            self.current_file = file_path
-            self.title(f"NanoEditor v3.0 - {os.path.basename(file_path)}")
-            self.status_bar.set_file_path(file_path)
-            self.terminal.set_working_directory(os.path.dirname(file_path))
-            self.file_tree.load_directory(os.path.dirname(file_path))
-            logger.info(f"Opened: {file_path}")
-            self.feedback.show_success(f"Opened: {os.path.basename(file_path)}")
-        except UnicodeDecodeError:
-            logger.error(f"Cannot decode: {file_path}")
-            self.feedback.show_error("Cannot decode file")
-            messagebox.showerror("Error", "Cannot decode file. Binary file or wrong encoding.")
-        except PermissionError:
-            logger.error(f"Permission denied: {file_path}")
-            self.feedback.show_error("Permission denied")
-            messagebox.showerror("Error", f"Permission denied: {file_path}")
-        except OSError as e:
-            logger.error(f"Cannot open file: {e}")
-            messagebox.showerror("Error", f"Cannot open file: {e}")
-        except Exception as e:
-            logger.exception(f"Unexpected error: {e}")
-            messagebox.showerror("Error", f"Unexpected error: {e}")
-
     def save_file(self):
         tab = self.tab_manager.get_current_tab()
         if not tab or not tab.file_path:
@@ -627,17 +441,13 @@ Ctrl+Click - Goto Definition"""
     def copy_text(self, event=None):
         """Copy selected text to clipboard."""
         try:
-            # Get selected text using multiple methods
             selected_text = None
-            
-            # Method 1: Direct get if selection exists
             try:
                 if self.has_text_selected():
                     selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
             except Exception:
                 pass
         
-            # Method 2: Try selection_get()
             if not selected_text:
                 try:
                     selected_text = self.tab_manager.text_area.selection_get()
@@ -652,7 +462,6 @@ Ctrl+Click - Goto Definition"""
             else:
                 self.feedback.show_warning("No text selected")
                 return "break"
-            
         except Exception as e:
             logger.error(f"Error copying text: {e}")
             self.feedback.show_error("Failed to copy")
@@ -661,17 +470,13 @@ Ctrl+Click - Goto Definition"""
     def cut_text(self, event=None):
         """Cut selected text to clipboard."""
         try:
-            # Get selected text using multiple methods
             selected_text = None
-
-            # Method 1: Direct get if selection exists
             try:
                 if self.has_text_selected():
                     selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
             except Exception:
                 pass
 
-            # Method 2: Try selection_get() which works better with tkinter
             if not selected_text:
                 try:
                     selected_text = self.tab_manager.text_area.selection_get()
@@ -679,20 +484,16 @@ Ctrl+Click - Goto Definition"""
                     selected_text = None
 
             if selected_text and selected_text.strip():
-                # Copy to clipboard
                 self.clipboard_clear()
                 self.clipboard_append(selected_text)
 
-                # Delete the selected text
                 try:
                     self.tab_manager.text_area.delete("sel.first", "sel.last")
                 except tk.TclError:
-                    # Fallback delete if selection tags are weird
                     pass
 
                 self.feedback.show_success("Text cut")
-                return "break"  # Stop event propagation
-
+                return "break"
             else:
                 self.feedback.show_warning("No text selected")
                 return "break"
@@ -736,22 +537,6 @@ Ctrl+Click - Goto Definition"""
             logger.error(f"Error pasting text: {e}")
             self.feedback.show_error("Failed to paste")
         return "break"
-
-    def _insert_text_at_cursor(self, text: str) -> None:
-        try:
-            self.tab_manager.text_area.insert(ctk.INSERT, text)
-        except tkinter.TclError:
-            pass
-
-    def _show_ai_result(self, title: str, result: str, allow_insert: bool = True) -> None:
-        insert_callback = self._insert_text_at_cursor if allow_insert else None
-        AIResultDialog(self, title, result, insert_callback).grab_set()
-    
-    def _handle_ai_result(self, title: str, result: str, allow_insert: bool, progress) -> None:
-        progress.stop()
-        self.feedback.show_success("AI completed")
-        processed_result = process_ai_code_output(result)
-        self._show_ai_result(title, processed_result, allow_insert)
 
     def open_project_search(self, search_options=None):
         """
@@ -802,176 +587,12 @@ Ctrl+Click - Goto Definition"""
         ext = os.path.splitext(tab.file_path)[1]
         return ext_map.get(ext, "Python")
 
-    def ai_explain_code(self) -> None:
-        code = self._get_selected_text()
-        if not code or not code.strip():
-            messagebox.showwarning("No Code", "Select code to explain")
-            return
-        
-        if len(code) > 50000:
-            messagebox.showwarning("Code Too Long", "Selected code is too long (max 50K chars)")
-            return
-        
-        context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Explaining...")
-        progress = self.feedback.show_progress("AI analyzing code...")
-        self.ai_assistant.explain_code(
-            code,
-            lambda r: self._handle_ai_result("Explanation", r, False, progress),
-            project_context=context
-        )
+    def _insert_text_at_cursor(self, text: str) -> None:
+        try:
+            self.tab_manager.text_area.insert(ctk.INSERT, text)
+        except tkinter.TclError:
+            pass
 
-    def ai_generate_code(self) -> None:
-        context = self._get_project_context()
-        def on_desc(desc: str) -> None:
-            lang = self._detect_language()
-            self.status_bar.set_file_path("AI: Generating...")
-            self.ai_assistant.generate_code(
-                desc, lang,
-                lambda r: self._show_ai_result("Generated", r),
-                project_context=context
-            )
-        AIActionDialog(self, "Generate Code", "Describe code:", on_desc).grab_set()
-
-    def ai_refactor_code(self) -> None:
-        code = self._get_selected_text()
-        if not code.strip():
-            messagebox.showwarning("No Code", "Select code to refactor")
-            return
-        context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Refactoring...")
-        self.ai_assistant.refactor_code(
-            code,
-            lambda r: self._show_ai_result("Refactored", r),
-            project_context=context
-        )
-
-    def ai_fix_errors(self) -> None:
-        code = self._get_selected_text()
-        if not code.strip():
-            messagebox.showwarning("No Code", "Select code to fix")
-            return
-        context = self._get_project_context()
-        def on_err(err: str) -> None:
-            self.status_bar.set_file_path("AI: Fixing...")
-            self.ai_assistant.fix_errors(
-                code, err,
-                lambda r: self._show_ai_result("Fixed", r),
-                project_context=context
-            )
-        AIActionDialog(self, "Fix Errors", "Error message:", on_err).grab_set()
-
-    def ai_optimize_code(self) -> None:
-        code = self._get_selected_text()
-        if not code.strip():
-            messagebox.showwarning("No Code", "Select code to optimize")
-            return
-        context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Optimizing...")
-        self.ai_assistant.optimize_code(
-            code,
-            lambda r: self._show_ai_result("Optimizations", r, False),
-            project_context=context
-        )
-
-    def ai_generate_docstring(self) -> None:
-        code = self._get_selected_text()
-        if not code.strip():
-            messagebox.showwarning("No Code", "Select function/class")
-            return
-        context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Documenting...")
-        self.ai_assistant.generate_docstring(
-            code,
-            lambda r: self._show_ai_result("Docstring", r),
-            project_context=context
-        )
-
-    def ai_translate_code(self) -> None:
-        code = self._get_selected_text()
-        if not code.strip():
-            messagebox.showwarning("No Code", "Select code to translate")
-            return
-        context = self._get_project_context()
-        def on_lang(lang: str) -> None:
-            from_lang = self._detect_language()
-            self.status_bar.set_file_path(f"AI: Translating to {lang}...")
-            self.ai_assistant.translate_code(
-                code, from_lang, lang,
-                lambda r: self._show_ai_result("Translated", r),
-                project_context=context
-            )
-        AIActionDialog(self, "Translate", "Target language:", on_lang).grab_set()
-
-    def ai_create_file(self) -> None:
-        def on_input(text: str) -> None:
-            lines = text.strip().split('\n', 1)
-            filename = lines[0].strip()
-            description = lines[1].strip() if len(lines) > 1 else lines[0]
-            self.status_bar.set_file_path(f"AI: Creating {filename}...")
-            self.ai_file_ops.create_file_from_description(
-                description, filename,
-                lambda result: messagebox.showinfo("AI File Creation", result)
-            )
-        AIActionDialog(
-            self, "Create File",
-            "Line 1: filename.py\nLine 2: Description of what the file should do",
-            on_input
-        ).grab_set()
-
-    def ai_modify_current_file(self) -> None:
-        tab = self.tab_manager.get_current_tab()
-        if not tab or not tab.file_path:
-            messagebox.showwarning("No File", "Open a file first")
-            return
-        def on_instruction(instruction: str) -> None:
-            self.status_bar.set_file_path("AI: Modifying file...")
-            self.ai_file_ops.modify_file(
-                tab.file_path, instruction,
-                lambda result: self._handle_file_modification(result)
-            )
-        AIActionDialog(
-            self, "Modify File",
-            "Describe what changes to make:",
-            on_instruction
-        ).grab_set()
-
-    def ai_add_function(self) -> None:
-        tab = self.tab_manager.get_current_tab()
-        if not tab or not tab.file_path:
-            messagebox.showwarning("No File", "Open a file first")
-            return
-        def on_description(description: str) -> None:
-            self.status_bar.set_file_path("AI: Adding function...")
-            self.ai_file_ops.add_function_to_file(
-                tab.file_path, description,
-                lambda result: self._handle_file_modification(result)
-            )
-        AIActionDialog(
-            self, "Add Function",
-            "Describe the function to add:",
-            on_description
-        ).grab_set()
-
-    def ai_create_project(self) -> None:
-        """Create a complete project structure from description."""
-        def on_description(description: str) -> None:
-            self.status_bar.set_file_path("AI: Creating project structure...")
-            self.ai_file_ops.create_project_structure(
-                description,
-                lambda result: messagebox.showinfo("AI Project Creation", result)
-            )
-        AIActionDialog(
-            self, "Create Project",
-            "Describe the project you want to create (e.g., 'A simple Flask app with REST API'):",
-            on_description
-        ).grab_set()
-    
-    def _handle_file_modification(self, result: str) -> None:
-        messagebox.showinfo("AI File Modification", result)
-        tab = self.tab_manager.get_current_tab()
-        if "✅" in result and tab and tab.file_path:
-            self.open_file(tab.file_path)
 
 
 if __name__ == "__main__":

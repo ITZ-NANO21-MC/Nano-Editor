@@ -230,15 +230,15 @@ class CodeEditor(customtkinter.CTkTextbox):
     
     def _apply_highlighting(self, tokens):
         """Apply highlighting tokens in main thread."""
-        def _apply():
-            self.highlighter.apply_tokens(tokens)
+        def on_done():
             # Re-apply ghost tag priority if active
             if self.ghost_text_active:
                 try:
                     self.tag_raise("ghost")
                 except tkinter.TclError:
                     pass
-        self.after(0, _apply)
+        
+        self.after(0, lambda: self.highlighter.apply_tokens(tokens, on_done))
 
     def show_completions(self, event=None):
         """Get and show completions from Jedi."""

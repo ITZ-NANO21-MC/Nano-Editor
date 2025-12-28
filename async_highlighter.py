@@ -28,13 +28,31 @@ class AsyncHighlighter:
         """Execute highlighting in background thread."""
         def worker() -> None:
             try:
-                # Usar TextLexer si no se puede determinar el lenguaje
-                try:
-                    lexer = get_lexer_for_filename(filepath)
-                except Exception:
-                    lexer = TextLexer()
+                from pygments.lexers import get_lexer_by_name
+                # Use BashLexer for .env files
+                if filepath.endswith('.env'):
+                    lexer = get_lexer_by_name('bash')
+                else:
+                    try:
+                        lexer = get_lexer_for_filename(filepath, text)
+                    except Exception:
+                        lexer = TextLexer()
                 
-                tokens = list(lex(text, lexer))
+                # Lex and merge consecutive tokens of the same type
+                tokens = []
+                gen = lex(text, lexer)
+                try:
+                    curr_token, curr_content = next(gen)
+                    for next_token, next_content in gen:
+                        if next_token == curr_token:
+                            curr_content += next_content
+                        else:
+                            tokens.append((curr_token, curr_content))
+                            curr_token, curr_content = next_token, next_content
+                    tokens.append((curr_token, curr_content))
+                except StopIteration:
+                    pass
+
                 callback(tokens)
             except Exception as e:
                 print(f"Error en worker de resaltado: {e}")

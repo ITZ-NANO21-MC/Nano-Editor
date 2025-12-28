@@ -1,5 +1,7 @@
 from pygments import lex
 from pygments.lexers.special import TextLexer
+from pygments import lex
+from pygments.lexers.special import TextLexer
 from pygments.lexers import guess_lexer_for_filename, get_lexer_by_name
 from pygments.styles import get_style_by_name
 from pygments.util import ClassNotFound
@@ -10,6 +12,8 @@ class SyntaxHighlighter:
     def __init__(self, text_widget, style="monokai"):
         self.text_widget = text_widget
         self.max_highlight_size = 100000
+        self._highlight_after_id = None
+        self._batch_size = 100
         
         try:
             self.style = get_style_by_name(style)
@@ -58,17 +62,20 @@ class SyntaxHighlighter:
             pass
         return None
 
-    def highlight(self, file_path):
-        """Resalta el texto sincrónicamente."""
+    def highlight(self, file_path, debounce=False):
+        """Resalta el texto (opcionalmente con debouncing)."""
+        if debounce:
+            if self._highlight_after_id:
+                self.text_widget.after_cancel(self._highlight_after_id)
+            self._highlight_after_id = self.text_widget.after(300, lambda: self.highlight(file_path, False))
+            return
+
         try:
             data = self.text_widget.get("1.0", "end-1c")
-            
             if len(data) > self.max_highlight_size:
                 return
             
-            # Limpiar etiquetas anteriores
             self.clear_highlighting()
-            
             try:
                 if file_path.endswith('.env'):
                     lexer = get_lexer_by_name('bash')
@@ -78,53 +85,33 @@ class SyntaxHighlighter:
                 lexer = TextLexer()
             
             self.apply_lexing(data, lexer)
-                    
         except Exception as e:
             print(f"Error en highlight: {e}")
 
+
     def apply_lexing(self, text, lexer):
-        """Aplica el lexing al texto."""
+        """Aplica el lexing al texto con optimización de fusión de tokens."""
         try:
             self.text_widget.mark_set("range_start", "1.0")
             
-            for token, content in lex(text, lexer):
-                if not content:
-                    continue
-                
-                try:
-                    self.text_widget.mark_set("range_end", f"range_start + {len(content)}c")
-                    
-                    # Convertir tipo de token a nombre de etiqueta
-                    token_type = str(token)
-                    tag_name = token_type.replace('.', '_')
-                    
-                    # Solo aplicar si tenemos esa etiqueta configurada
-                    if tag_name in self.text_widget.tag_names():
-                        self.text_widget.tag_add(tag_name, "range_start", "range_end")
-                    
-                    self.text_widget.mark_set("range_start", "range_end")
-                except tkinter.TclError:
-                    break
-                    
-        except Exception as e:
-            print(f"Error en apply_lexing: {e}")
-
-    def clear_highlighting(self):
-        """Elimina todas las etiquetas de resaltado."""
-        try:
-            for tag in self.text_widget.tag_names():
-                if tag not in ['sel']:  # No eliminar selección
-                    self.text_widget.tag_remove(tag, "1.0", "end")
-        except tkinter.TclError:
-            pass
-
-    def apply_tokens(self, tokens):
-        """Aplica tokens precomputados."""
-        try:
-            self.clear_highlighting()
-            self.text_widget.mark_set("range_start", "1.0")
+            # Agrupar tokens consecutivos del mismo tipo para reducir llamadas a tag_add
+            merged_tokens = []
+            if not text: return
             
-            for token, content in tokens:
+            gen = lex(text, lexer)
+            try:
+                curr_token, curr_content = next(gen)
+                for next_token, next_content in gen:
+                    if next_token == curr_token:
+                        curr_content += next_content
+                    else:
+                        merged_tokens.append((curr_token, curr_content))
+                        curr_token, curr_content = next_token, next_content
+                merged_tokens.append((curr_token, curr_content))
+            except StopIteration:
+                pass
+
+            for token, content in merged_tokens:
                 if not content:
                     continue
                 
@@ -139,4 +126,54 @@ class SyntaxHighlighter:
                 except tkinter.TclError:
                     break
         except Exception as e:
+            print(f"Error en apply_lexing: {e}")
+
+    def clear_highlighting(self):
+        """Elimina todas las etiquetas de resaltado."""
+        try:
+            for tag in self.text_widget.tag_names():
+                if tag not in ['sel']:  # No eliminar selección
+                    self.text_widget.tag_remove(tag, "1.0", "end")
+        except tkinter.TclError:
+            pass
+
+    def apply_tokens(self, tokens, callback=None):
+        """Aplica tokens precomputados de forma no bloqueante (en trozos)."""
+        try:
+            self.clear_highlighting()
+            self.text_widget.mark_set("range_start", "1.0")
+            
+            # Procesar en trozos para no bloquear el hilo principal
+            self._process_token_chunk(iter(tokens), callback)
+        except Exception as e:
             print(f"Error en apply_tokens: {e}")
+
+    def _process_token_chunk(self, token_iter, callback=None):
+        """Procesa un trozo de tokens y programa el siguiente."""
+        try:
+            count = 0
+            for token, content in token_iter:
+                if not content: continue
+                
+                try:
+                    self.text_widget.mark_set("range_end", f"range_start + {len(content)}c")
+                    tag_name = str(token).replace('.', '_')
+                    
+                    if tag_name in self.text_widget.tag_names():
+                        self.text_widget.tag_add(tag_name, "range_start", "range_end")
+                    
+                    self.text_widget.mark_set("range_start", "range_end")
+                except tkinter.TclError:
+                    return
+
+                count += 1
+                if count >= self._batch_size:
+                    # Programar el siguiente trozo
+                    self.text_widget.after(1, lambda: self._process_token_chunk(token_iter, callback))
+                    return
+            
+            # Finalizado con éxito
+            if callback:
+                callback()
+        except Exception as e:
+            print(f"Error en _process_token_chunk: {e}")
