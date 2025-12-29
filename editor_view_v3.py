@@ -275,11 +275,11 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.bind("<Control-Shift-X>", lambda e: self.show_extensions())
         self.bind("<Control-comma>", lambda e: self.show_settings())
 
-        # Atajos de teclado estándar para selección
-        self.bind("<Control-a>", lambda e: self.select_all())
-        self.bind("<Control-c>", lambda e: self.copy_text())
-        self.bind("<Control-x>", self.cut_text())
-        self.bind("<Control-v>", self.paste_text())
+        # Bind editing shortcuts directly to text_area to prevent bubbling
+        self.tab_manager.text_area.bind("<Control-a>", lambda e: self.select_all())
+        self.tab_manager.text_area.bind("<Control-c>", self.copy_text)
+        self.tab_manager.text_area.bind("<Control-x>", self.cut_text)
+        self.tab_manager.text_area.bind("<Control-v>", self.paste_text)
 
     def toggle_file_tree(self):
         if self.file_tree_visible:
@@ -523,52 +523,50 @@ class App(ctk.CTk, AIHandler, FileHandler):
     def has_text_selected(self):
         """Check if there's any text selected in the editor."""
         try:
-            # Method 1: Try tag_ranges
-            if self.tab_manager.text_area.tag_ranges("sel"):
-                return True
-        
-            # Method 2: Try getting selection directly
-            try:
-                selected = self.tab_manager.text_area.get("sel.first", "sel.last")
-                return bool(selected and selected.strip())
-            except Exception:
-                return False
+            # Targeted check on internal textbox
+            text_widget = self.tab_manager.text_area
+            if hasattr(text_widget, "_textbox"):
+                text_widget = text_widget._textbox
             
+            if text_widget.tag_ranges("sel"):
+                return True
+            return False
         except Exception:
             return False
 
-    def select_all(self):
+    def select_all(self, event=None):
         """Select all text in the current editor."""
         try:
-            self.tab_manager.text_area.tag_add("sel", "1.0", "end")
-            self.tab_manager.text_area.focus_set()
+            text_widget = self.tab_manager.text_area
+            if hasattr(text_widget, "_textbox"):
+                text_widget = text_widget._textbox
+            
+            text_widget.tag_add("sel", "1.0", "end")
+            text_widget.focus_set()
+            return "break"
         except Exception as e:
             logger.error(f"Error selecting all text: {e}")
+            return "break"
 
     def copy_text(self, event=None):
         """Copy selected text to clipboard."""
         try:
-            selected_text = None
-            try:
-                if self.has_text_selected():
-                    selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
-            except Exception:
-                pass
-        
-            if not selected_text:
+            text_area = self.tab_manager.text_area
+            # Use internal textbox if available
+            text_widget = text_area._textbox if hasattr(text_area, "_textbox") else text_area
+
+            if self.has_text_selected():
                 try:
-                    selected_text = self.tab_manager.text_area.selection_get()
+                    selected_text = text_widget.get("sel.first", "sel.last")
+                    if selected_text:
+                        self.clipboard_clear()
+                        self.clipboard_append(selected_text)
+                        self.feedback.show_success("Text copied")
+                        return "break"
                 except tk.TclError:
-                    selected_text = None
+                    pass
             
-            if selected_text and selected_text.strip():
-                self.clipboard_clear()
-                self.clipboard_append(selected_text)
-                self.feedback.show_success("Text copied")
-                return "break"
-            else:
-                self.feedback.show_warning("No text selected")
-                return "break"
+            self.feedback.show_warning("No text selected")
         except Exception as e:
             logger.error(f"Error copying text: {e}")
             self.feedback.show_error("Failed to copy")
@@ -577,33 +575,26 @@ class App(ctk.CTk, AIHandler, FileHandler):
     def cut_text(self, event=None):
         """Cut selected text to clipboard."""
         try:
-            selected_text = None
-            try:
-                if self.has_text_selected():
-                    selected_text = self.tab_manager.text_area.get("sel.first", "sel.last")
-            except Exception:
-                pass
+            text_area = self.tab_manager.text_area
+            # Use internal textbox if available
+            text_widget = text_area._textbox if hasattr(text_area, "_textbox") else text_area
 
-            if not selected_text:
+            if self.has_text_selected():
                 try:
-                    selected_text = self.tab_manager.text_area.selection_get()
-                except tk.TclError:
-                    selected_text = None
-
-            if selected_text and selected_text.strip():
-                self.clipboard_clear()
-                self.clipboard_append(selected_text)
-
-                try:
-                    self.tab_manager.text_area.delete("sel.first", "sel.last")
+                    selected_text = text_widget.get("sel.first", "sel.last")
+                    if selected_text:
+                        self.clipboard_clear()
+                        self.clipboard_append(selected_text)
+                        
+                        # Use internal widget delete to be precise
+                        text_widget.delete("sel.first", "sel.last")
+                        
+                        self.feedback.show_success("Text cut")
+                        return "break"
                 except tk.TclError:
                     pass
 
-                self.feedback.show_success("Text cut")
-                return "break"
-            else:
-                self.feedback.show_warning("No text selected")
-                return "break"
+            self.feedback.show_warning("No text selected")
         except Exception as e:
             logger.error(f"Error cutting text: {e}")
             self.feedback.show_error("Failed to cut")
@@ -612,7 +603,10 @@ class App(ctk.CTk, AIHandler, FileHandler):
     def paste_text(self, event=None):
         """Paste text from clipboard."""
         try:
-            # Get clipboard content
+            text_area = self.tab_manager.text_area
+            # Use internal textbox if available
+            text_widget = text_area._textbox if hasattr(text_area, "_textbox") else text_area
+
             try:
                 clipboard_text = self.clipboard_get()
             except tk.TclError:
@@ -622,24 +616,21 @@ class App(ctk.CTk, AIHandler, FileHandler):
                 self.feedback.show_warning("Clipboard is empty")
                 return "break"
 
-            # Check if there's a selection to replace
             if self.has_text_selected():
-                # Get the position where the selection starts
-                insert_pos = self.tab_manager.text_area.index("sel.first")
-                # Delete selection first
-                self.tab_manager.text_area.delete("sel.first", "sel.last")
-                # Insert at the saved position
-                self.tab_manager.text_area.insert(insert_pos, clipboard_text)
+                try:
+                    insert_pos = text_widget.index("sel.first")
+                    text_widget.delete("sel.first", "sel.last")
+                    text_widget.insert(insert_pos, clipboard_text)
+                except tk.TclError:
+                    text_widget.insert(ctk.INSERT, clipboard_text)
             else:
-                # Insert at cursor position
-                cursor_pos = self.tab_manager.text_area.index(ctk.INSERT)
-                self.tab_manager.text_area.insert(cursor_pos, clipboard_text)
+                text_widget.insert(ctk.INSERT, clipboard_text)
 
+            # Ensure visibility
+            text_widget.see(ctk.INSERT)
             self.feedback.show_success("Text pasted")
-            return "break"  # CRUCIAL: Prevent default paste behavior
+            return "break"
 
-        except tk.TclError:
-            self.feedback.show_warning("Clipboard is empty or not accessible")
         except Exception as e:
             logger.error(f"Error pasting text: {e}")
             self.feedback.show_error("Failed to paste")
