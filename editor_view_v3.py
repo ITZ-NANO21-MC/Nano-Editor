@@ -221,8 +221,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.tab_manager.grid(row=0, column=2, sticky="nsew", padx=5, pady=5)
         
         # Terminal
-        self.terminal = TerminalPanel(content)
-        self.terminal.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
+        self.terminal_panel = TerminalPanel(content)
+        self.terminal_panel.grid(row=1, column=2, sticky="nsew", padx=5, pady=5)
+        self.terminal = self.terminal_panel # Alias
         
         # Gemini panel
         self.gemini_client = GeminiClient()
@@ -485,7 +486,7 @@ class App(ctk.CTk, AIHandler, FileHandler):
             cmd = " ".join(shlex.quote(arg) for arg in cmd_list)
             logger.info(f"Running: {tab.file_path}")
             self.feedback.show_info("Running file...")
-            self.terminal.execute_command(cmd)
+            self.terminal.run_command(cmd)
         else:
             logger.warning(f"No runner for: {ext}")
             messagebox.showinfo("Run", f"No runner for {ext}")

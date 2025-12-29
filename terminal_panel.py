@@ -31,7 +31,14 @@ class TerminalPanel(ctk.CTkFrame):
         self.history_index = 0
         self.current_command = ""
         
-        # Colors for different output types
+        # ANSI Color mapping
+        self.ansi_colors = {
+            "30": "black", "31": "error", "32": "success", "33": "command",
+            "34": "prompt", "35": "ps1", "36": "directory", "37": "output",
+            "90": "output", "91": "error", "92": "success", "93": "command",
+            "94": "prompt", "95": "ps1", "96": "directory", "97": "output"
+        }
+        
         self.colors = {
             "prompt": "#4A9EFF",
             "command": "#FFD700",
@@ -39,7 +46,8 @@ class TerminalPanel(ctk.CTkFrame):
             "error": "#FF5555",
             "success": "#50FA7B",
             "directory": "#8BE9FD",
-            "ps1": "#FF79C6"  # Prompt color
+            "ps1": "#FF79C6",
+            "black": "#000000"
         }
         
         # Shell prompt configuration
@@ -162,6 +170,7 @@ class TerminalPanel(ctk.CTkFrame):
         self.cmd_input.bind("<Tab>", self._tab_completion)
         self.cmd_input.bind("<Control-c>", self._send_ctrl_c)
         self.cmd_input.bind("<Control-l>", self._clear_screen)
+        self.cmd_input.bind("<Control-d>", self._on_ctrl_d)
         
         # Button frame
         self.button_frame = ctk.CTkFrame(self.input_frame, fg_color="transparent")
@@ -234,38 +243,111 @@ Type 'help' for available commands, or start typing commands.
         self.output_text.see("end")
     
     def _write_to_output(self, text: str, tag: str = "output"):
-        """Write text to output area with specified tag."""
+        """Write text to output area directly (used for one-off messages)."""
         self.output_text.configure(state="normal")
-        
-        # Insert text with tag
-        self.output_text.insert("end", text, tag)
-        
-        # Auto-scroll
+        self._write_to_output_raw(text, tag)
         self.output_text.see("end")
-        
         self.output_text.configure(state="disabled")
     
     def _start_output_processor(self):
-        """Start thread to process output from queue."""
+        """Start thread to process output from queue with batching."""
         def processor():
             while True:
                 try:
-                    text, tag = self.output_queue.get(timeout=0.1)
-                    self.after(0, lambda: self._write_to_output(text, tag))
-                except queue.Empty:
-                    continue
+                    # Batch processing to prevent UI lag
+                    batch = []
+                    # Wait for at least one item
+                    try:
+                        first_item = self.output_queue.get(timeout=0.1)
+                        batch.append(first_item)
+                    except queue.Empty:
+                        continue
+                    
+                    # Grab everything currently in queue, up to 1000 items
+                    while not self.output_queue.empty() and len(batch) < 1000:
+                        try:
+                            batch.append(self.output_queue.get_nowait())
+                        except queue.Empty:
+                            break
+                    
+                    if batch:
+                        # Process the batch as a single UI update if possible
+                        # but _write_to_output handles ANSI sequences, so we group by tags
+                        self.after(0, lambda b=batch: self._process_batch(b))
+                        
                 except Exception:
                     break
         
         thread = threading.Thread(target=processor, daemon=True)
         thread.start()
+
+    def _process_batch(self, batch: List[Tuple[str, str]]):
+        """Process a batch of output items efficiently."""
+        self.output_text.configure(state="normal")
+        
+        # Optimize: group consecutive items with same tag to reduce insert calls
+        if not batch: return
+        
+        current_text = ""
+        current_tag = batch[0][1]
+        
+        for text, tag in batch:
+            if tag == current_tag:
+                current_text += text
+            else:
+                self._write_to_output_raw(current_text, current_tag)
+                current_text = text
+                current_tag = tag
+        
+        if current_text:
+            self._write_to_output_raw(current_text, current_tag)
+            
+        self.output_text.see("end")
+        self.output_text.configure(state="disabled")
+
+    def _write_to_output_raw(self, text: str, tag: str):
+        """Low-level write to text widget with ANSI support."""
+        if "\x1b[" in text:
+            import re
+            parts = re.split(r'(\x1b\[[0-9;]*m)', text)
+            active_tag = tag
+            
+            for part in parts:
+                if part.startswith('\x1b['):
+                    match = re.search(r'([0-9]{1,2})m', part)
+                    if match:
+                        code = match.group(1)
+                        if code == "0":
+                            active_tag = tag
+                        elif code in self.ansi_colors:
+                            active_tag = self.ansi_colors[code]
+                else:
+                    if part:
+                        self.output_text.insert("end", part, active_tag)
+        else:
+            self.output_text.insert("end", text, tag)
     
     def _on_command_enter(self, event=None):
         """Handle Enter key in command input."""
-        command = self.cmd_input.get().strip()
+        command = self.cmd_input.get()
         self.cmd_input.delete(0, "end")
         
+        # If a process is running, send to stdin
+        if self.process and self.running:
+            # Display the entered input in terminal
+            self._write_to_output(f"{command}\n", "command")
+            try:
+                self.process.stdin.write(command + "\n")
+                self.process.stdin.flush()
+            except Exception as e:
+                self.output_queue.put((f"Error sending input: {e}\n", "error"))
+            return
+
+        command = command.strip()
         if not command:
+            # Just show a new prompt if empty
+            if self.show_prompt:
+                 self._write_prompt()
             return
         
         # Add to history
@@ -363,7 +445,7 @@ Type 'help' for available commands, or start typing commands.
                     stderr=subprocess.PIPE,
                     stdin=subprocess.PIPE,
                     text=True,
-                    bufsize=1,
+                    bufsize=0, # Unbuffered for real-time interaction
                     universal_newlines=True,
                     cwd=self.cwd,
                     env=os.environ.copy()
@@ -371,25 +453,42 @@ Type 'help' for available commands, or start typing commands.
                 
                 self.running = True
                 
-                # Read output in real-time
-                while self.running and self.process.poll() is None:
-                    # Read stdout
-                    if self.process.stdout:
-                        for line in iter(self.process.stdout.readline, ''):
-                            if line:
-                                self.output_queue.put((line, "output"))
-                    
-                    # Read stderr
-                    if self.process.stderr:
-                        for line in iter(self.process.stderr.readline, ''):
-                            if line:
-                                self.output_queue.put((line, "error"))
+                # Use separate threads for stdout and stderr to prevent deadlocks
+                # and allow reading character by character for interactive prompts
                 
-                # Get exit code
+                def read_stream(stream, tag):
+                    try:
+                        # Use a small buffer but allow character by character fallback
+                        while self.running and self.process:
+                            # Use read(1) for prompts, but we could optimize to read more if available
+                            char = stream.read(1)
+                            if not char:
+                                break
+                            self.output_queue.put((char, tag))
+                    except Exception:
+                        pass
+
+                stdout_thread = threading.Thread(target=read_stream, args=(self.process.stdout, "output"), daemon=True)
+                stderr_thread = threading.Thread(target=read_stream, args=(self.process.stderr, "error"), daemon=True)
+                
+                stdout_thread.start()
+                stderr_thread.start()
+                
+                # Wait for process to end
                 returncode = self.process.wait()
                 
+                # IMPORTANT: Wait for threads to finish draining the streams
+                self.running = False # Signal threads to stop after finishing read
+                stdout_thread.join(timeout=1.0)
+                stderr_thread.join(timeout=1.0)
+                
+                # Wait for queue to be processed by UI
+                # We give it a tiny bit of time or we can check queue explicitly
+                while not self.output_queue.empty():
+                    time.sleep(0.01)
+
                 # Process completed
-                self.after(0, self._process_completed, returncode)
+                self.after(100, self._process_completed, returncode)
                 
             except Exception as e:
                 self.output_queue.put((f"Error executing command: {e}\n", "error"))
@@ -632,39 +731,73 @@ EXAMPLES:
         return "break"
     
     def _tab_completion(self, event=None):
-        """Basic tab completion for commands and files."""
-        current = self.cmd_input.get()
+        """Enhanced tab completion for commands and nested paths."""
+        line = self.cmd_input.get()
+        if not line: return "break"
         
-        # Get possible completions
+        # Split by spaces but respect quotes? For now simple split.
+        parts = line.split()
+        if not parts: return "break"
+        
+        last_part = parts[-1] if not line.endswith(" ") else ""
+        
         completions = []
         
-        # Command completion
-        common_commands = ["cd", "ls", "pwd", "clear", "help", "exit", "quit", 
-                          "cat", "cp", "mv", "rm", "mkdir", "rmdir",
-                          "python", "pip", "git", "echo"]
+        if len(parts) == 1 and not line.endswith(" "):
+            # Command completion
+            common_commands = ["cd", "ls", "pwd", "clear", "help", "exit", "quit", 
+                              "cat", "cp", "mv", "rm", "mkdir", "rmdir",
+                              "python", "pip", "git", "echo"]
+            for cmd in common_commands:
+                if cmd.startswith(last_part):
+                    completions.append(cmd)
         
-        for cmd in common_commands:
-            if cmd.startswith(current):
-                completions.append(cmd)
-        
-        # File completion
-        if current and not current.startswith(" "):
-            for item in os.listdir(self.cwd):
-                if item.startswith(current):
-                    completions.append(item)
-        
+        # Path completion (always try if there's a last part or it looks like a path)
+        try:
+            # Determine search dir and prefix
+            if "/" in last_part or "\\" in last_part:
+                dirname = os.path.dirname(last_part)
+                prefix = os.path.basename(last_part)
+                search_dir = os.path.join(self.cwd, dirname)
+            else:
+                dirname = ""
+                prefix = last_part
+                search_dir = self.cwd
+                
+            if os.path.isdir(search_dir):
+                for item in os.listdir(search_dir):
+                    if item.startswith(prefix):
+                        # Add dir slash for directories
+                        suffix = "/" if os.path.isdir(os.path.join(search_dir, item)) else ""
+                        completions.append(os.path.join(dirname, item) + suffix)
+        except Exception:
+            pass
+            
         if completions:
             # Find common prefix
-            common_prefix = os.path.commonprefix(completions)
-            if common_prefix and common_prefix != current:
+            common = os.path.commonprefix(completions)
+            if common and common != last_part:
+                # Replace the last part with common prefix
+                new_line = line[:line.rfind(last_part)] + common
                 self.cmd_input.delete(0, "end")
-                self.cmd_input.insert(0, common_prefix)
+                self.cmd_input.insert(0, new_line)
             elif len(completions) > 1:
                 # Show options
-                self._write_to_output("\n" + "  ".join(completions[:10]) + "\n", "output")
-                if self.show_prompt:
-                    self._write_prompt()
+                options = [os.path.basename(c.rstrip("/")) for c in completions]
+                self._write_to_output("\n" + "  ".join(options[:20]) + "\n", "output")
+                self._write_prompt()
         
+        return "break"
+
+    def _on_ctrl_d(self, event=None):
+        """Handle Ctrl+D (EOF/Exit)."""
+        if not self.cmd_input.get():
+            if self.running:
+                self._kill_process()
+            else:
+                self._write_to_output("exit\n", "command")
+                # Instead of quitting app, just clear input
+                self.cmd_input.delete(0, "end")
         return "break"
     
     def _send_ctrl_c(self, event=None):
@@ -693,7 +826,7 @@ EXAMPLES:
         # Rewrite welcome
         self._write_welcome()
     
-    def execute_command(self, command: str):
+    def run_command(self, command: str):
         """Execute command from external source (API)."""
         if self.show_prompt:
             self._write_to_output(f"{command}\n", "command")

@@ -388,16 +388,19 @@ class SettingsPanel(ctk.CTkFrame):
         current_model = config.get('AI_MODEL', 'models/gemini-2.0-flash')
         
         models = [
-            "models/gemini-2.5-pro",
-            "models/gemini-2.5-flash",
+            "models/gemini-2.0-pro-exp-02-05",
             "models/gemini-2.0-flash",
+            "models/gemini-2.0-flash-lite-preview-02-05",
+            "models/gemini-2.0-flash-exp",
+            "models/gemini-1.5-pro",
+            "models/gemini-1.5-flash",
+            "models/gemini-1.5-pro-exp-0827",
+            "models/gemini-exp-1206",
             "models/gemini-3-pro-preview",
             "models/gemini-3-flash-preview",
-            "models/gemini-2.0-flash-lite",
-            "models/gemini-2.0-flash-exp",
-            "models/gemini-2.5-flash-lite",
-            "models/gemini-pro-latest",
-            "models/gemini-flash-latest"
+            "models/gemini-2.5-pro",
+            "models/gemini-2.5-flash",
+            "models/gemini-1.0-pro"
         ]
         
         # Ensure current model is in list
