@@ -1,4 +1,4 @@
-# NanoEditor v3.2 (Streaming Chat & UI Refactor)
+# NanoEditor v3.5 (Interactive Terminal & Modular AI)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -25,28 +25,20 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 - **Project Search**: Búsqueda en todo el proyecto
 - **Line Numbers**: Números de línea sincronizados
 
-### 🤖 IA Assistant Completo
+### 🤖 IA Assistant & Configuración
 - **Contexto de Proyecto Global**: La IA analiza el árbol de archivos y las pestañas abiertas para dar respuestas más precisas.
-- **10+ Funciones de IA**:
-  - Explain Code
-  - Generate Code
-  - Refactor Code
-  - Fix Errors
-  - Optimize Code
-  - Generate Docstring
-  - Translate Code
-- **File Operations con IA**:
-  - Create File
-  - Modify File
-  - Add Function
-- **Chat con Streaming**: Las respuestas de la IA aparecen en tiempo real, palabra por palabra, para una experiencia de chat fluida y sin esperas.
-- **Chat Gemini Contextual**: Panel de chat que mantiene el historial de la conversación y permite incluir opcionalmente el contexto del proyecto.
-- **Limpieza Automática de Salida**: Elimina los ´´´ de las respuestas de la IA para un uso directo.
+- **Selección de 13 Modelos**: Menú dinámico con los 13 modelos Gemini más aptos para programación (vía `sidebar_vscode.py`).
+- **Persistencia con .env**: Configuración de modelo, tema y timeouts guardada automáticamente.
+- **10+ Funciones de IA**: Explain, Generate, Refactor, Fix, Optimize, Docstring, Translate, etc.
+- **Chat con Streaming**: Respuestas en tiempo real, palabra por palabra.
+- **Limpieza Automática de Salida**: Elimina bloques de código redundantes para un uso directo.
 
-### 🖥️ Terminal Integrado
-- Terminal funcional con soporte para `cd`
-- Ejecución de archivos (Python, JavaScript, Bash)
-- Comandos sanitizados (protección contra inyección)
+### 🖥️ Terminal Panel Pro
+- **Terminal Interactivo**: Soporte completo para scripts con `input()`.
+- **Salida Estable**: Procesamiento por lotes (batching) para evitar corrupción de texto en salidas rápidas.
+- **Colores ANSI**: Soporte para colores profesionales (`git`, `ls`, errores de compilación).
+- **Autocompletado Pro**: Tabulación inteligente para rutas de archivos y carpetas.
+- **Ejecución Integrada**: Botón "Run" sincronizado con la terminal interactiva.
 
 ### 🔒 Seguridad Robusta
 - Validación completa de inputs
@@ -170,17 +162,13 @@ Nano_Editor/
 ├── text_area.py               # Editor de texto (Resiliente a ImportError)
 ├── syntax_highlighter.py      # Resaltado de sintaxis
 ├── async_highlighter.py       # Highlighting asíncrono
-├── ai_assistant.py            # Asistente de IA
-├── project_context.py         # Lógica para dar contexto a la IA
-├── ai_utils.py                # Utilidades para el asistente de IA
-├── gemini_client.py           # Cliente Gemini (Soporta Streaming)
-├── terminal_panel.py          # Terminal integrado (Protegido)
-├── visual_feedback.py         # Notificaciones
-├── event_bus.py               # Sistema de eventos
-├── logger.py                  # Sistema de logging
-├── file_tree_vscode.py        # Explorador de archivos
-├── sidebar_vscode.py          # Barra lateral
-├── status_bar.py              # Barra de estado
+├── ai_handler.py              # Gestión de UI y lógica de IA (Modularizado)
+├── file_handler.py            # Operaciones de archivo y ejecución (Modularizado)
+├── menu_bar.py                # Componente de la barra de menú global
+├── terminal_panel.py          # Terminal interactivo con batching y ANSI
+├── config.py                  # Gestión de configuración persistente
+├── sidebar_vscode.py          # Barra lateral con Settings y selección de modelos
+├── status_bar.py              # Barra de estado informativa
 ├── tests/                     # Tests unitarios (Mocks incluidos)
 ├── Informacion/               # Documentación completa
 └── legacy/                    # Versiones anteriores
@@ -242,6 +230,15 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v3.5 (Interactive & Optimized) - Diciembre 2025
+- ✅ **Terminal Interactivo**: Soporte completo para `input()`, permitiendo interactuar con scripts directamente.
+- ✅ **Estabilidad de Terminal**: Implementado **batching** para la salida de texto, evitando texto amontonado o duplicado.
+- ✅ **Expansión de IA**: Selección de **13 modelos específicos** para programación en el panel de Settings.
+- ✅ **Modularización de Core**: Extracción de `ai_handler`, `file_handler` y `menu_bar` de la clase `App` principal.
+- ✅ **Corrección de Shortcuts**: Arreglados errores de `Ctrl+X` y `Ctrl+V` que causaban doble pegado o fallos de selección.
+- ✅ **Optimización de Highlighting**: Mejorado el sistema de resaltado con debouncing y combinación de tokens.
+- ✅ **Nuevos Diálogos**: Ventanas personalizadas de "Shortcuts" (scrollable) y "About" premium.
 
 ### v3.2 (UI & Chat Refactor) - Diciembre 2025
 - ✅ **Chat con Streaming**: Se modernizó por completo el panel de chat de Gemini. Ahora mantiene un historial persistente y muestra las respuestas de la IA en tiempo real (palabra por palabra).
