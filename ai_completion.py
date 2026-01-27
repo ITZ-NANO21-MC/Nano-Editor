@@ -140,26 +140,16 @@ class AICompletionEngine:
             return []
     
     def _call_ai_completion(self, prompt: str) -> Optional[str]:
-        """Call AI model for completion (placeholder implementation)."""
-        # In a real implementation, this would call the AI API
-        # For now, we'll simulate with the existing AI assistant
-        result = []
-        
-        # We'll use a simple synchronous call for now
-        # In production, this should be async
-        def callback(response):
-            result.append(response)
-        
-        self.ai._run_ai_completion(prompt, callback)
-        
-        # Wait for result (timeout after 2 seconds)
-        start_time = time.time()
-        while not result and time.time() - start_time < 30:
-            time.sleep(0.1)
-        
-        if result:
-            response_text = result[0]
-            logger.info(f"AI Raw Response: {response_text[:200]}...") # Log first 200 chars
+        """Call AI model for completion synchronously."""
+        try:
+            # Use the synchronous method since we are already in a background thread
+            response_text = self.ai.complete_code_sync(prompt)
+            
+            if not response_text:
+                logger.warning("AI Completion returned empty response")
+                return None
+
+            logger.info(f"AI Raw Response: {response_text[:200]}...")
             
             # Check for API errors
             if response_text.startswith("Error:") or response_text.startswith("API Error:") or "429" in response_text:
@@ -167,8 +157,9 @@ class AICompletionEngine:
                 return None
                 
             return response_text
-        else:
-            logger.warning("AI Completion timed out or returned no result")
+            
+        except Exception as e:
+            logger.error(f"Error calling AI completion: {e}")
             return None
     
     def _prepare_context(self, 

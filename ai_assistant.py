@@ -24,6 +24,12 @@ class AIAssistant:
         thread = threading.Thread(target=target, daemon=True)
         thread.start()
 
+    def complete_code_sync(self, prompt: str) -> str:
+        """Execute AI completion synchronously (blocking, for use in worker threads)."""
+        model_to_use = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
+        logger.debug(f"Requesting AI completion (sync) with model: {model_to_use}")
+        return self.ai_client.generate_content(prompt, model_to_use)
+
     def complete_code(self, code: str, cursor_line: int, callback: Callable[[str], None], project_context: str = "") -> None:
         """Generate code completion suggestions."""
         prompt = f"""{project_context}
