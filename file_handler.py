@@ -30,6 +30,13 @@ class FileHandler:
                 self.current_file = file_path
                 self.status_bar.set_file_path(file_path)
                 
+                # Sync file tree if opened file is in a different directory
+                file_dir = os.path.dirname(file_path)
+                if hasattr(self, 'file_tree') and self.file_tree:
+                    current_tree_path = getattr(self.file_tree, 'current_path', None)
+                    if current_tree_path != file_dir:
+                        self.file_tree.load_directory(file_dir)
+                
             except Exception as e:
                 messagebox.showerror("Error", f"Could not open file: {e}")
 
