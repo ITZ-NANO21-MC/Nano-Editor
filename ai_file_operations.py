@@ -71,7 +71,7 @@ Return ONLY the complete modified code, no explanations."""
                 except Exception as e:
                     callback(f"❌ Error modifying file: {e}")
             
-            self.ai._run_gemini_command(prompt, on_response)
+            self.ai._run_ai_completion(prompt, on_response)
             
         except Exception as e:
             callback(f"❌ Error: {e}")
@@ -110,7 +110,7 @@ Return the COMPLETE file with the new function added in the appropriate place.""
                 except Exception as e:
                     callback(f"❌ Error: {e}")
             
-            self.ai._run_gemini_command(prompt, on_response)
+            self.ai._run_ai_completion(prompt, on_response)
             
         except Exception as e:
             callback(f"❌ Error: {e}")
@@ -133,7 +133,7 @@ Return ONLY valid JSON."""
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         folder_name = f"project_{timestamp}"
         
-        self.ai._run_gemini_command(prompt, lambda resp: self.apply_project_structure_from_response(resp, lambda res, files: callback(res), folder_name=folder_name))
+        self.ai._run_ai_completion(prompt, lambda resp: self.apply_project_structure_from_response(resp, lambda res, files: callback(res), folder_name=folder_name))
     
     def apply_project_structure_from_response(self, response: str, callback: Callable[[str, Optional[list]], None], folder_name: Optional[str] = None) -> None:
         """Parse AI response and create project files."""

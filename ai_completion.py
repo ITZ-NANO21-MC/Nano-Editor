@@ -150,7 +150,7 @@ class AICompletionEngine:
         def callback(response):
             result.append(response)
         
-        self.ai._run_gemini_command(prompt, callback)
+        self.ai._run_ai_completion(prompt, callback)
         
         # Wait for result (timeout after 2 seconds)
         start_time = time.time()

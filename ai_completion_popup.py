@@ -17,11 +17,18 @@ class AICompletionPopup:
         self.text_widget = text_widget
         self.on_select = on_select
         
+        # Determine theme colors
+        self.is_dark = ctk.get_appearance_mode().lower() == "dark"
+        self.bg_color = "#2B2B2B" if self.is_dark else "#F3F3F3"
+        self.fg_color = "#CCCCCC" if self.is_dark else "#333333"
+        self.select_bg = "#3B8ED0"
+        self.select_fg = "#FFFFFF"
+        
         # Create popup window
         self.popup = tk.Toplevel(master)
         self.popup.wm_overrideredirect(True)
         self.popup.configure(
-            bg="#2B2B2B",
+            bg=self.bg_color,
             relief="solid",
             borderwidth=1
         )
@@ -29,10 +36,10 @@ class AICompletionPopup:
         # Listbox for suggestions
         self.listbox = tk.Listbox(
             self.popup,
-            bg="#2B2B2B",
-            fg="#CCCCCC",
-            selectbackground="#3B8ED0",
-            selectforeground="#FFFFFF",
+            bg=self.bg_color,
+            fg=self.fg_color,
+            selectbackground=self.select_bg,
+            selectforeground=self.select_fg,
             font=("monospace", 11),
             height=8,
             width=50,
@@ -60,6 +67,14 @@ class AICompletionPopup:
         if not suggestions:
             self._hide()
             return
+            
+        # Refresh theme colors in case they changed
+        self.is_dark = ctk.get_appearance_mode().lower() == "dark"
+        self.bg_color = "#2B2B2B" if self.is_dark else "#F3F3F3"
+        self.fg_color = "#CCCCCC" if self.is_dark else "#333333"
+        
+        self.popup.configure(bg=self.bg_color)
+        self.listbox.configure(bg=self.bg_color, fg=self.fg_color)
         
         self.suggestions = suggestions
         self.listbox.delete(0, tk.END)
@@ -67,10 +82,13 @@ class AICompletionPopup:
         # Add suggestions to listbox
         for i, suggestion in enumerate(suggestions):
             # Create display text with confidence indicator
-            confidence_bar = "█" * int(suggestion.confidence * 5)
-            display_text = f"{confidence_bar} {suggestion.text[:50]}"
+            # Simpler indicator for cleaner look
+            confidence_blocks = int(suggestion.confidence * 3) 
+            indicator = "●" * confidence_blocks + "○" * (3 - confidence_blocks)
             
-            if len(suggestion.text) > 50:
+            display_text = f"{indicator} {suggestion.text[:55]}"
+            
+            if len(suggestion.text) > 55:
                 display_text += "..."
             
             self.listbox.insert(i, display_text)
