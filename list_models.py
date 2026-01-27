@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""List available Gemini models."""
+"""List supported AI model formats and examples."""
 
 import sys
 from pathlib import Path
@@ -8,35 +8,30 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import config
 
 def list_models():
-    print("🔍 Listing Available Gemini Models")
+    print("🔍 Multi-Model AI Support (via LiteLLM)")
     print("=" * 60)
     
-    api_key = config.get('GEMINI_API_KEY')
-    if not api_key or api_key == 'your-api-key-here':
-        print("❌ API key not configured")
-        print("Run: ./setup_env.sh")
-        return
+    print("\n📋 Common Model Formats (set in .env as AI_MODEL):\n")
     
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=api_key)
-        
-        print("\n📋 Available models:\n")
-        
-        for model in genai.list_models():
-            if 'generateContent' in model.supported_generation_methods:
-                print(f"✅ {model.name}")
-                print(f"   Display: {model.display_name}")
-                print(f"   Description: {model.description[:80]}...")
-                print()
-        
-        print("=" * 60)
-        print("\n💡 To use a model, update .env:")
-        print("   AI_MODEL=models/gemini-1.5-flash-latest")
-        print()
-        
-    except Exception as e:
-        print(f"❌ Error: {e}")
+    models = [
+        ("Gemini", "gemini/gemini-1.5-flash", "GEMINI_API_KEY"),
+        ("OpenAI", "openai/gpt-4o", "OPENAI_API_KEY"),
+        ("Anthropic", "anthropic/claude-3-5-sonnet", "ANTHROPIC_API_KEY"),
+        ("DeepSeek", "deepseek/deepseek-chat", "DEEPSEEK_API_KEY"),
+        ("Groq", "groq/llama-3.1-70b-versatile", "GROQ_API_KEY"),
+    ]
+    
+    for provider, model, key_name in models:
+        key_val = config.get(key_name)
+        status = "✅ Configured" if key_val and key_val != 'your-api-key-here' else "❌ Missing key"
+        print(f"🔹 {provider:10} -> {model:30} [{status}: {key_name}]")
+
+    print("\n" + "=" * 60)
+    print("\n💡 To use a model, update .env:")
+    print("   AI_MODEL=openai/gpt-4o")
+    print("   OPENAI_API_KEY=sk-...")
+    print("\n🔗 LiteLLM supports 100+ providers. Use provider/model-name format.")
+    print()
 
 if __name__ == "__main__":
     list_models()

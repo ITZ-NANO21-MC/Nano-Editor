@@ -286,6 +286,164 @@ class ExtensionsPanel(ctk.CTkFrame):
         ).pack(pady=10)
 
 
+class SettingsWindowBase(ctk.CTkToplevel):
+    """Base class for settings dialogs."""
+    def __init__(self, master, title, width=400, height=450):
+        super().__init__(master)
+        self.title(title)
+        self.geometry(f"{width}x{height}")
+        self.after(10, self.lift)
+        self.resizable(False, False)
+        
+        # Center window
+        self.update_idletasks()
+        x = master.winfo_screenwidth() // 2 - width // 2
+        y = master.winfo_screenheight() // 2 - height // 2
+        self.geometry(f"+{x}+{y}")
+        
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=1)
+
+        # Header
+        header = ctk.CTkLabel(self, text=title, font=("Segoe UI", 16, "bold"))
+        header.grid(row=0, column=0, padx=20, pady=15, sticky="w")
+        
+        self.content_frame = ctk.CTkFrame(self, fg_color="transparent")
+        self.content_frame.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="nsew")
+        
+        # Close button
+        btn = ctk.CTkButton(self, text="Cerrar", command=self.destroy, width=100)
+        btn.grid(row=2, column=0, pady=(0, 20))
+
+
+class AppearanceSettingsWindow(SettingsWindowBase):
+    """Appearance settings dialog."""
+    def __init__(self, master, app):
+        super().__init__(master, "Configuración de Apariencia")
+        self.app = app
+        
+        # Theme
+        ctk.CTkLabel(self.content_frame, text="Tema del Editor", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 5))
+        theme_frame = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        theme_frame.pack(fill="x", pady=5)
+        
+        ctk.CTkButton(
+            theme_frame, text="Claro", width=100,
+            command=lambda: app.set_theme("light")
+        ).pack(side="left", padx=5)
+        
+        ctk.CTkButton(
+            theme_frame, text="Oscuro", width=100,
+            command=lambda: app.set_theme("dark")
+        ).pack(side="left", padx=5)
+        
+        # Font size
+        ctk.CTkLabel(self.content_frame, text="Tamaño de Fuente", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(20, 5))
+        self.font_size_var = tk.IntVar(value=app.settings_panel.font_size_var.get() if hasattr(app, 'settings_panel') else 13)
+        self.font_slider = ctk.CTkSlider(
+            self.content_frame, from_=8, to=30,
+            variable=self.font_size_var,
+            command=self.update_font
+        )
+        self.font_slider.pack(fill="x", pady=5)
+        
+        # Syntax Highlighting
+        ctk.CTkLabel(self.content_frame, text="Resaltado de Sintaxis", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(20, 5))
+        
+        styles = list(get_all_styles())
+        styles.sort()
+        styles = styles[:15]
+        
+        if "monokai" not in styles:
+            styles.append("monokai")
+            styles.sort()
+        
+        self.style_var = ctk.StringVar(value=app.settings_panel.style_var.get() if hasattr(app, 'settings_panel') else "monokai")
+        self.style_menu = ctk.CTkComboBox(
+            self.content_frame, values=styles,
+            variable=self.style_var,
+            command=self.update_style,
+            state="readonly"
+        )
+        self.style_menu.pack(fill="x", pady=5)
+
+    def update_font(self, value):
+        self.app.update_font_size(int(value))
+        if hasattr(self.app, 'settings_panel'):
+            self.app.settings_panel.font_size_var.set(int(value))
+
+    def update_style(self, choice):
+        self.app.set_syntax_theme(choice)
+        if hasattr(self.app, 'settings_panel'):
+            self.app.settings_panel.style_var.set(choice)
+
+
+class PanelsSettingsWindow(SettingsWindowBase):
+    """Panels visibility settings dialog."""
+    def __init__(self, master, app):
+        super().__init__(master, "Configuración de Paneles", height=300)
+        self.app = app
+        
+        ctk.CTkLabel(self.content_frame, text="Visibilidad de Paneles", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 5))
+        
+        self.show_terminal_var = app.settings_panel.show_terminal_var
+        self.show_ai_var = app.settings_panel.show_ai_var
+        
+        ctk.CTkCheckBox(
+            self.content_frame, text="Mostrar Terminal",
+            variable=self.show_terminal_var,
+            command=self.update_panels
+        ).pack(anchor="w", pady=10)
+        
+        ctk.CTkCheckBox(
+            self.content_frame, text="Mostrar Panel IA",
+            variable=self.show_ai_var,
+            command=self.update_panels
+        ).pack(anchor="w", pady=10)
+
+    def update_panels(self):
+        self.app.settings_panel.update_panels()
+
+
+class AIModelSettingsWindow(SettingsWindowBase):
+    """AI provider and model settings dialog."""
+    def __init__(self, master, app):
+        super().__init__(master, "Configuración de IA", height=400)
+        self.app = app
+        self.providers = app.settings_panel.providers
+        
+        ctk.CTkLabel(self.content_frame, text="Proveedor de IA", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 5))
+        
+        self.provider_var = app.settings_panel.provider_var
+        self.provider_menu = ctk.CTkComboBox(
+            self.content_frame, values=list(self.providers.keys()),
+            variable=self.provider_var,
+            command=self.update_provider_models,
+            state="readonly"
+        )
+        self.provider_menu.pack(fill="x", pady=5)
+
+        ctk.CTkLabel(self.content_frame, text="Modelo de IA", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(20, 5))
+        
+        self.ai_model_var = app.settings_panel.ai_model_var
+        self.ai_model_menu = ctk.CTkComboBox(
+            self.content_frame, values=self.providers.get(self.provider_var.get(), []),
+            variable=self.ai_model_var,
+            command=self.update_ai_model,
+            state="readonly"
+        )
+        self.ai_model_menu.pack(fill="x", pady=5)
+
+    def update_provider_models(self, provider):
+        self.app.settings_panel.update_provider_models(provider)
+        # Update our local menu values
+        models = self.providers.get(provider, [])
+        self.ai_model_menu.configure(values=models)
+
+    def update_ai_model(self, choice):
+        self.app.settings_panel.update_ai_model(choice)
+
+
 class SettingsPanel(ctk.CTkFrame):
     """Settings panel for editor configuration."""
     def __init__(self, master, app):
@@ -302,136 +460,94 @@ class SettingsPanel(ctk.CTkFrame):
             text_color=("#383838", "#CCCCCC")
         ).pack(side="left", padx=10, pady=8)
         
-        # Control variables
+        # Variables persist here to maintain state
         self.show_terminal_var = tk.BooleanVar(value=True)
         self.show_ai_var = tk.BooleanVar(value=True)
         self.font_size_var = tk.IntVar(value=13)
-        
-        # Settings options
-        settings_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        settings_frame.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        # Theme
-        ctk.CTkLabel(settings_frame, text="Theme", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        theme_frame = ctk.CTkFrame(settings_frame, fg_color="transparent")
-        theme_frame.pack(fill="x", pady=5)
-        
-        ctk.CTkButton(
-            theme_frame, text="Light", width=100,
-            command=lambda: app.set_theme("light")
-        ).pack(side="left", padx=5)
-        
-        ctk.CTkButton(
-            theme_frame, text="Dark", width=100,
-            command=lambda: app.set_theme("dark")
-        ).pack(side="left", padx=5)
-        
-        # Font size
-        ctk.CTkLabel(settings_frame, text="Font Size", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        self.font_slider = ctk.CTkSlider(
-            settings_frame, from_=8, to=30,
-            variable=self.font_size_var,
-            command=self.update_font
-        )
-        self.font_slider.pack(fill="x", pady=5)
-        
-        # Syntax Highlighting
-        ctk.CTkLabel(settings_frame, text="Syntax Highlighting", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        
-        # Get styles and sort them
-        styles = list(get_all_styles())
-        styles.sort()
-        styles = styles[:12]  # Mostrar solo los primeros 12
-        
-        # Asegurar que monokai esté en la lista si es el default
-        if "monokai" not in styles:
-            styles.append("monokai")
-            styles.sort()
-        
         self.style_var = ctk.StringVar(value="monokai")
-        self.style_menu = ctk.CTkComboBox(
-            settings_frame, values=styles,
-            variable=self.style_var,
-            command=self.update_style,
-            state="readonly"
-        )
-        self.style_menu.pack(fill="x", pady=5)
         
-        # Bindings for navigation
-        self.style_menu.bind("<Up>", self.on_style_key)
-        self.style_menu.bind("<Down>", self.on_style_key)
-        self.style_menu.bind("<MouseWheel>", self.on_style_scroll)
-        self.style_menu.bind("<Button-4>", self.on_style_scroll) # Linux scroll up
-        self.style_menu.bind("<Button-5>", self.on_style_scroll) # Linux scroll down
-        
-        # Panels visibility
-        ctk.CTkLabel(settings_frame, text="Panels", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
-        
-        self.terminal_cb = ctk.CTkCheckBox(
-            settings_frame, text="Show Terminal",
-            variable=self.show_terminal_var,
-            command=self.update_panels
-        )
-        self.terminal_cb.pack(anchor="w", pady=2)
-        
-        self.ai_cb = ctk.CTkCheckBox(
-            settings_frame, text="Show AI Panel",
-            variable=self.show_ai_var,
-            command=self.update_panels
-        )
-        self.ai_cb.pack(anchor="w", pady=2)
-
-        # AI Model Selection
-        ctk.CTkLabel(settings_frame, text="AI Model", font=("Segoe UI", 11, "bold")).pack(anchor="w", pady=(10, 5))
+        self.providers = {
+            "Gemini": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro", "gemini-2.0-flash-exp", "gemini-1.5-flash", "gemini-1.5-pro"],
+            "OpenAI": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+            "Anthropic": ["claude-3-5-sonnet", "claude-3-5-haiku", "claude-3-opus", "claude-3-sonnet"],
+            "DeepSeek": ["deepseek-chat", "deepseek-coder"],
+            "Groq": ["llama-3.1-70b-versatile", "llama-3.1-8b-instant", "mixtral-8x7b-32768"],
+            "Ollama": ["llama3", "mistral", "codellama"]
+        }
         
         from config import config
-        current_model = config.get('AI_MODEL', 'models/gemini-2.0-flash')
+        current_full_model = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
         
-        models = [
-            "models/gemini-2.0-pro-exp-02-05",
-            "models/gemini-2.0-flash",
-            "models/gemini-2.0-flash-lite-preview-02-05",
-            "models/gemini-2.0-flash-exp",
-            "models/gemini-1.5-pro",
-            "models/gemini-1.5-flash",
-            "models/gemini-1.5-pro-exp-0827",
-            "models/gemini-exp-1206",
-            "models/gemini-3-pro-preview",
-            "models/gemini-3-flash-preview",
-            "models/gemini-2.5-pro",
-            "models/gemini-2.5-flash",
-            "models/gemini-1.0-pro"
+        if '/' in current_full_model:
+            curr_provider_key, curr_model_name = current_full_model.split('/', 1)
+            provider_map = {k.lower(): k for k in self.providers.keys()}
+            current_provider = provider_map.get(curr_provider_key.lower(), "Gemini")
+        else:
+            current_provider = "Gemini"
+            curr_model_name = current_full_model
+
+        self.provider_var = ctk.StringVar(value=current_provider)
+        self.ai_model_var = ctk.StringVar(value=curr_model_name)
+
+        # Settings Buttons
+        btn_frame = ctk.CTkFrame(self, fg_color="transparent")
+        btn_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        categories = [
+            ("Apariencia", self.open_appearance),
+            ("Paneles", self.open_panels),
+            ("Configuración de IA", self.open_ai)
         ]
         
-        # Ensure current model is in list
-        if current_model not in models:
-            models.insert(0, current_model)
-            
-        self.ai_model_var = ctk.StringVar(value=current_model)
-        self.ai_model_menu = ctk.CTkComboBox(
-            settings_frame, values=models,
-            variable=self.ai_model_var,
-            command=self.update_ai_model,
-            state="readonly"
-        )
-        self.ai_model_menu.pack(fill="x", pady=5)
+        for name, cmd in categories:
+            btn = ctk.CTkButton(
+                btn_frame, text=name, command=cmd,
+                height=40, font=("Segoe UI", 12),
+                anchor="w", fg_color=("#E0E0E0", "#333333"),
+                text_color=("#333333", "#FFFFFF"),
+                hover_color=("#D0D0D0", "#404040")
+            )
+            btn.pack(fill="x", pady=5)
+
+    def open_appearance(self):
+        AppearanceSettingsWindow(self.app, self.app).grab_set()
+
+    def open_panels(self):
+        PanelsSettingsWindow(self.app, self.app).grab_set()
+
+    def open_ai(self):
+        AIModelSettingsWindow(self.app, self.app).grab_set()
+
+    def update_provider_models(self, provider):
+        models = self.providers.get(provider, [])
+        if models:
+            self.ai_model_var.set(models[0])
+            self.update_ai_model(models[0])
 
     def update_ai_model(self, choice):
-        """Update and save the AI model configuration."""
         from config import config
-        config.set('AI_MODEL', choice)
+        provider = self.provider_var.get()
+        prefix = provider.lower()
+        
+        if prefix == "openai":
+             full_model = f"{prefix}/{choice}"
+        elif prefix == "gemini":
+             if not choice.startswith("gemini/"):
+                full_model = f"{prefix}/{choice}"
+             else:
+                full_model = choice
+        else:
+             full_model = f"{prefix}/{choice}"
+
+        config.set('AI_MODEL', full_model)
         if config.save():
-            print(f"[DEBUG] AI Model updated to: {choice}")
             if hasattr(self.app, 'feedback'):
-                self.app.feedback.show_success(f"Model updated: {choice.split('/')[-1]}")
+                self.app.feedback.show_success(f"Modelo actualizado: {choice}")
         else:
             if hasattr(self.app, 'feedback'):
-                self.app.feedback.show_error("Failed to save .env configuration")
+                self.app.feedback.show_error("Error al guardar .env")
 
     def update_panels(self):
-        """
-        Updates the visibility of terminal and AI panels based on checkbox states.
-        """
         show_terminal = self.show_terminal_var.get()
         show_ai = self.show_ai_var.get()
         
@@ -444,56 +560,3 @@ class SettingsPanel(ctk.CTkFrame):
             self.app.gemini_panel.grid()
         else:
             self.app.gemini_panel.grid_remove()
-
-    def update_font(self, value):
-        """
-        Updates the editor font size in real-time.
-        
-        Args:
-            value (float): The new font size from the slider.
-        """
-        size = int(value)
-        self.app.update_font_size(size)
-
-    def update_style(self, choice):
-        """Update syntax highlighting style."""
-        print(f"[DEBUG] Sidebar: Style selected: {choice}")
-        self.app.set_syntax_theme(choice)
-
-    def on_style_key(self, event):
-        """Handle arrow key navigation in style combobox."""
-        styles = self.style_menu.cget("values")
-        current = self.style_var.get()
-        if current in styles:
-            idx = styles.index(current)
-            if event.keysym == "Up":
-                new_idx = max(0, idx - 1)
-            else:
-                new_idx = min(len(styles) - 1, idx + 1)
-            
-            new_style = styles[new_idx]
-            self.style_var.set(new_style)
-            self.update_style(new_style)
-        return "break"
-
-    def on_style_scroll(self, event):
-        """Handle mouse wheel navigation in style combobox."""
-        styles = self.style_menu.cget("values")
-        current = self.style_var.get()
-        
-        if current in styles:
-            idx = styles.index(current)
-            
-            # Determine scroll direction
-            delta = 0
-            if event.num == 4 or (hasattr(event, 'delta') and event.delta > 0):
-                delta = -1 # Scroll up
-            elif event.num == 5 or (hasattr(event, 'delta') and event.delta < 0):
-                delta = 1 # Scroll down
-            
-            if delta != 0:
-                new_idx = max(0, min(len(styles) - 1, idx + delta))
-                new_style = styles[new_idx]
-                self.style_var.set(new_style)
-                self.update_style(new_style)
-        return "break"

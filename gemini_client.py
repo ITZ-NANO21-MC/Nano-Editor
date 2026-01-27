@@ -1,68 +1,26 @@
-"""Gemini client using Python API instead of CLI."""
+"""Gemini client refactored to use unified AIClient via LiteLLM."""
 import threading
 from typing import Callable, Optional
 from config import config
+from ai_client import AIClient
 
 
 class GeminiClient:
+    """Wrapper that maintains the legacy GeminiClient interface but uses AIClient."""
+    
     def __init__(self) -> None:
-        self.process: Optional[object] = None
+        self.ai_client = AIClient()
         self.timeout: int = config.get_int('AI_TIMEOUT', 60)
-        self.model_name: str = config.get('AI_MODEL', 'models/gemini-2.5-flash')
 
     def run_gemini(self, query: str, callback: Callable[[str], None]) -> None:
-        def target() -> None:
-            try:
-
-                from google import genai
-                
-                api_key = config.get('GEMINI_API_KEY')
-                if not api_key:
-                    callback("Error: GEMINI_API_KEY not configured\n\nCreate .env file with:\nGEMINI_API_KEY=your-api-key")
-                    return
-                
-                client = genai.Client(api_key=api_key)
-                model_to_use = config.get('AI_MODEL', 'models/gemini-2.0-flash')
-                response = client.models.generate_content(
-                    model=model_to_use,
-                    contents=query
-                )
-                if response.text:
-                    callback(response.text)
-                else:
-                    callback("")
-                
-            except ImportError:
-                callback("Error: google-genai not installed\n\nInstall with:\n./env/bin/pip install google-genai")
-            except Exception as e:
-                callback(f"Error: {str(e)}\n\nVerify your API key is correct")
-
-        thread = threading.Thread(target=target, daemon=True)
-        thread.start()
+        """Maintains legacy method name for compatibility."""
+        model_to_use = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
+        threading.Thread(
+            target=lambda: self.ai_client.generate_content(query, model_to_use, callback),
+            daemon=True
+        ).start()
 
     def run_gemini_stream(self, query: str):
-        """Runs Gemini API with streaming and yields response chunks."""
-        try:
-
-            from google import genai
-            
-            api_key = config.get('GEMINI_API_KEY')
-            if not api_key:
-                yield "Error: GEMINI_API_KEY not configured. Create a .env file with your key."
-                return
-            
-            client = genai.Client(api_key=api_key)
-            model_to_use = config.get('AI_MODEL', 'models/gemini-2.0-flash')
-            response_stream = client.models.generate_content_stream(
-                model=model_to_use,
-                contents=query
-            )
-            
-            for chunk in response_stream:
-                if chunk.text:
-                    yield chunk.text
-        
-        except ImportError:
-            yield "Error: google-genai not installed. Run: pip install google-genai"
-        except Exception as e:
-            yield f"Error: {str(e)}"
+        """Maintains legacy method name for compatibility."""
+        model_to_use = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
+        return self.ai_client.stream_content(query, model_to_use)
