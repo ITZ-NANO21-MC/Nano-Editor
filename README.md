@@ -1,4 +1,4 @@
-# NanoEditor v3.5 (Interactive Terminal & Modular AI)
+# NanoEditor v3.7 (Multi-Model AI & Refactored UI)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -25,9 +25,10 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 - **Project Search**: Búsqueda en todo el proyecto
 - **Line Numbers**: Números de línea sincronizados
 
-### 🤖 IA Assistant & Configuración
+- **Multi-Model Support**: Selección dinámica de 13 modelos Gemini y compatibilidad con OpenAI, Anthropic, DeepSeek y Groq (vía LiteLLM).
+- **Settings UI Refactor**: Ventanas de configuración categorizadas (Apariencia, Paneles, IA) para una mejor organización.
 - **Contexto de Proyecto Global**: La IA analiza el árbol de archivos y las pestañas abiertas para dar respuestas más precisas.
-- **Selección de 13 Modelos**: Menú dinámico con los 13 modelos Gemini más aptos para programación (vía `sidebar_vscode.py`).
+- **IA Unificada**: Nuevo `AIClient` robusto basado en LiteLLM para mayor estabilidad.
 - **Persistencia con .env**: Configuración de modelo, tema y timeouts guardada automáticamente.
 - **10+ Funciones de IA**: Explain, Generate, Refactor, Fix, Optimize, Docstring, Translate, etc.
 - **Chat con Streaming**: Respuestas en tiempo real, palabra por palabra.
@@ -230,6 +231,13 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v3.7 (Multi-Model AI & Refactored UI) - Enero 2026
+- ✅ **Soporte Multi-Modelo**: Integración de **LiteLLM** permitiendo usar Gemini, OpenAI, Anthropic y más.
+- ✅ **Refactorización de Settings**: Interfaz de configuración dividida en diálogos independientes (Appearance, Panels, AI Settings).
+- ✅ **Modernización de UI**: Nueva ventana de **Find References** interactiva y popup de autocompletado ajustable al tema (Light/Dark).
+- ✅ **Sync de Proyecto**: El árbol de archivos ahora se sincroniza automáticamente al abrir archivos de diferentes directorios.
+- ✅ **Cliente de IA Unificado**: Refactorización de `AIAssistant` para usar un cliente abstracto y desacoplado.
 
 ### v3.5 (Interactive & Optimized) - Diciembre 2025
 - ✅ **Terminal Interactivo**: Soporte completo para `input()`, permitiendo interactuar con scripts directamente.
