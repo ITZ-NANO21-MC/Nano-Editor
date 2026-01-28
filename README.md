@@ -1,4 +1,4 @@
-# NanoEditor v3.7 (Multi-Model AI & Refactored UI)
+# NanoEditor v3.8 (Consolidated Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -232,6 +232,13 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 
 ## 📝 Changelog
 
+### v3.8 (Consolidated Edition) - Enero 2026
+- ✅ **Optimización de IA**: Implementación de caché LRU y llamadas síncronas para eliminar esperas activas de UI.
+- ✅ **Arquitectura Desacoplada**: Implementación completa de `EventBus` para comunicación entre componentes (FileTree <-> App).
+- ✅ **Terminal Modular**: Separación de lógica backend (`TerminalProcess`) de la interfaz gráfica (`TerminalPanel`).
+- ✅ **Gestor de Ghost Text**: Extracción de lógica de sugerencias fantasma a `GhostTextManager`.
+- ✅ **Limpieza de Código**: Modularización masiva de `editor_view_v3.py` (God Object reducido).
+
 ### v3.7 (Multi-Model AI & Refactored UI) - Enero 2026
 - ✅ **Soporte Multi-Modelo**: Integración de **LiteLLM** permitiendo usar Gemini, OpenAI, Anthropic y más.
 - ✅ **Refactorización de Settings**: Interfaz de configuración dividida en diálogos independientes (Appearance, Panels, AI Settings).
@@ -302,5 +309,5 @@ MIT License - Ver [LICENSE](LICENSE) para más detalles
 
 ---
 
-**NanoEditor v3.2** - Editor de código profesional, ligero y contextual ✨
+**NanoEditor v3.8** - Editor de código profesional, optimizado y listo para escalar ✨
 

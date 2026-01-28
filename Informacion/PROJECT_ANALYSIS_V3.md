@@ -43,6 +43,9 @@
 | `project_search.py` | Búsqueda en proyecto | ✅ ACTIVO |
 | `goto_definition.py` | Navegación de código (Jedi) | ✅ ACTIVO |
 | `config.py` | Configuración .env | ✅ ACTIVO |
+| `event_bus.py` | Sistema de Eventos (Pub/Sub) | ✅ ACTIVO |
+| `terminal_process.py` | Backend de Terminal (Threads) | ✅ ACTIVO |
+| `ghost_text_manager.py` | Gestor de Sugerencias IA | ✅ ACTIVO |
 
 ---
 
@@ -102,6 +105,7 @@ editor_view_v3.py (MAIN)
 │   └── SettingsPanel
 ├── ai_panel_vscode.py
 ├── terminal_panel.py
+│   └── terminal_process.py
 ├── gemini_panel.py
 │   └── gemini_client.py
 ├── ai_assistant.py
@@ -110,6 +114,7 @@ editor_view_v3.py (MAIN)
 ├── find_replace.py
 ├── project_search.py
 ├── goto_definition.py
+├── event_bus.py
 └── config.py
 ```
 

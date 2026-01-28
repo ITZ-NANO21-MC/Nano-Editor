@@ -42,12 +42,12 @@ PI para evitar bloqueos en la UI.
 *Enfoque: Estabilidad visual y organización de la base de código.*
 
 ### Parte 3.1: Reorganización de `terminal_panel.py`
-- [ ] **Separación Backend/Frontend**: Aislar la gestión del proceso PTY/Shell de la lógica de renderizado en el widget de texto.
-- [ ] **Gestión de Streams**: Optimizar la forma en que el terminal lee la salida para evitar "saltos" en archivos de log grandes.
+- [x] **Separación Backend/Frontend**: Aislar la gestión del proceso PTY/Shell de la lógica de renderizado en el widget de texto.
+- [x] **Gestión de Streams**: Optimizar la forma en que el terminal lee la salida para evitar "saltos" en archivos de log grandes.
 
 ### Parte 3.2: Modularización de `text_area.py`
-- [ ] **Extraer GhostText**: Mover la lógica de visualización del texto fantasma a su propio módulo para simplificar el widget de código principal.
-- [ ] **Optimización de Highlighting**: Refinar el debouncing del resaltado asíncrono.
+- [x] **Extraer GhostText**: Mover la lógica de visualización del texto fantasma a su propio módulo para simplificar el widget de código principal.
+- [x] **Optimización de Highlighting**: Refinar el debouncing del resaltado asíncrono.
 
 ---
 
@@ -57,5 +57,5 @@ PI para evitar bloqueos en la UI.
 - **Preparación v4**: El sistema de plugins debe poder suscribirse a eventos sin modificar el core del editor.
 
 ---
-**Ultima actualización:** 2026-01-27
-**Estado:** Pendiente de Inicio de Ejecución
+**Ultima actualización:** 2026-01-28
+**Estado:** Completada
