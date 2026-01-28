@@ -4,6 +4,7 @@ import queue
 import time
 from typing import Optional, Callable, List, Tuple
 from dataclasses import dataclass
+from collections import OrderedDict
 from ai_assistant import AIAssistant
 from config import config
 from logger import logger
@@ -120,14 +121,11 @@ class AICompletionEngine:
             # Prepare context for AI
             context = self._prepare_context(code, line, col, file_path)
             
-            # Call AI (this would be async in real implementation)
-            # For now, we'll use a synchronous call but in a thread
+            # Call AI synchronously (already in background thread)
             prompt = self._build_completion_prompt(context)
             
             suggestions = []
             
-            # This would be replaced with actual AI call
-            # For now, we'll use a placeholder
             ai_response = self._call_ai_completion(prompt)
             
             if ai_response:
@@ -290,13 +288,15 @@ Return ONLY valid JSON, no explanations."""
         return hashlib.md5(key_data.encode()).hexdigest()
     
     def _add_to_cache(self, key: str, suggestions: List[CompletionSuggestion]):
-        """Add result to cache."""
-        if len(self.cache) >= self.max_cache_size:
-            # Remove oldest entry
-            oldest_key = next(iter(self.cache))
-            del self.cache[oldest_key]
+        """Add result to cache using LRU policy."""
+        if key in self.cache:
+            self.cache.move_to_end(key)
         
         self.cache[key] = suggestions
+        
+        if len(self.cache) > self.max_cache_size:
+            # Remove oldest entry (first item)
+            self.cache.popitem(last=False)
     
     def _execute_callback(self, callback: Callable, suggestions: List[CompletionSuggestion]):
         """Execute callback in main thread."""

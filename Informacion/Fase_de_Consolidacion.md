@@ -16,7 +16,7 @@ El plan se divide en **3 Fases de Refactorización**, cada una diseñada para se
 ### Parte 1.1: Refactorización de `ai_completion.py`
 - [x] **Eliminar Espera Activa**: Sustituir el bucle `while/sleep` en el hilo de autocompletado por una llamada bloqueante directa al cliente de IA.
 - [x] **Simplificación de Hilos**: Evitar la creación de hilos duplicados por cada solicitud de autocompletado.
-- [ ] **Optimización de Caché**: Mejorar la estructura de la caché de autocompletado para búsquedas más rápidas.
+- [x] **Optimización de Caché**: Mejorar la estructura de la caché de autocompletado para búsquedas más rápidas.
 
 ### Parte 1.2: Consolidación de `AIAssistant`
 - [ ] **Uniformidad de Métodos**: Asegurar que todos los métodos de `AIAssistant` usen el nuevo `AIClient` de forma estandarizada.
