@@ -43,21 +43,11 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.file_path = None
         self.completion_popup = None
         
-        # Configurar sincronización de barra de desplazamiento
-        self.after(200, self._configure_scrollbar_sync)
-
-        # Ghost Text State
-        self.ghost_text_active = False
-        self.typing_timer = None
-        self._ghost_request_pos = None
         
-        # Configure ghost text style
-        try:
-            self.tag_config("ghost", foreground="gray50")
-        except AttributeError:
-            if hasattr(self, "_textbox"):
-                self._textbox.tag_config("ghost", foreground="gray50")
-
+        # Ghost Text Manager
+        from ghost_text_manager import GhostTextManager
+        self.ghost_manager = GhostTextManager(self)
+        
     def _configure_scrollbar_sync(self):
         """Configure the internal scrollbar to sync with line numbers."""
         # CTkTextbox tiene un atributo _scrollbar interno
@@ -130,8 +120,6 @@ class CodeEditor(customtkinter.CTkTextbox):
                 pass
 
 
-
-
     def _on_completion_up(self, event):
         if self.completion_popup:
             self.completion_popup.move_selection(-1)
@@ -148,9 +136,8 @@ class CodeEditor(customtkinter.CTkTextbox):
             self.completion_popup = None
             return "break"
             
-        if self.ghost_text_active:
-            logger.info("Tab/Enter pressed: Accepting ghost text")
-            self.accept_ghost_text()
+        if self.ghost_manager.active:
+            self.ghost_manager.accept()
             return "break"
 
     def _on_completion_hide(self, event):
@@ -159,9 +146,8 @@ class CodeEditor(customtkinter.CTkTextbox):
             self.completion_popup = None
             return "break"
             
-        if self.ghost_text_active:
-            logger.info("Escape pressed: Clearing ghost text")
-            self.clear_ghost_text()
+        if self.ghost_manager.active:
+            self.ghost_manager.clear()
             return "break"
 
     def _on_key_press_ghost_clear(self, event):
@@ -175,16 +161,14 @@ class CodeEditor(customtkinter.CTkTextbox):
         if event.keysym in ignored_keys:
             return  # Let other handlers deal with these
         
-        if self.ghost_text_active:
-            logger.info(f"KeyPress '{event.keysym}': Clearing ghost text before new input")
-            self.clear_ghost_text()
+        if self.ghost_manager.active:
+            self.ghost_manager.clear()
         # Don't return "break" - let the character be inserted
 
     def _on_click_ghost_clear(self, event):
         """Clear ghost text when user clicks somewhere else."""
-        if self.ghost_text_active:
-            logger.info("Mouse click: Clearing ghost text")
-            self.clear_ghost_text()
+        if self.ghost_manager.active:
+            self.ghost_manager.clear()
         # Don't return "break" - let the click proceed normally
 
     def on_key_release(self, event):
@@ -198,15 +182,14 @@ class CodeEditor(customtkinter.CTkTextbox):
                     self.completion_popup = None
 
             # Ghost Text Logic: Clear on typing, start timer
-            if self.ghost_text_active and event.char and event.keysym not in ("Return", "Tab", "Escape"):
-                self.clear_ghost_text()
+            if self.ghost_manager.active and event.char and event.keysym not in ("Return", "Tab", "Escape"):
+                self.ghost_manager.clear()
             
-            if self.typing_timer:
-                self.after_cancel(self.typing_timer)
+            self.ghost_manager.cancel_timer()
             
             if not self.completion_popup and event.keysym not in ("Up", "Down", "Left", "Right", "Return", "Escape", "Tab", "Control_L", "Control_R"):
                 # Wait 1.5s before requesting ghost text
-                self.typing_timer = self.after(1500, self._on_typing_pause)
+                self.ghost_manager.schedule_request()
 
             # Trigger completions automatically
             if event.keysym == 'period':
@@ -257,7 +240,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Apply highlighting tokens in main thread."""
         def on_done():
             # Re-apply ghost tag priority if active
-            if self.ghost_text_active:
+            if self.ghost_manager.active:
                 try:
                     self.tag_raise("ghost")
                 except tkinter.TclError:
@@ -366,93 +349,3 @@ class CodeEditor(customtkinter.CTkTextbox):
                 self.after(10, self._sync_line_numbers)
         except tkinter.TclError:
             pass
-
-
-    def _on_typing_pause(self):
-        """Called when user stops typing for a while."""
-        if self.completion_popup or self.ghost_text_active:
-            return
-            
-        try:
-            code = self.get("1.0", "end-1c")
-            cursor_pos = self.index(customtkinter.INSERT)
-            self._ghost_request_pos = cursor_pos
-            line, col = map(int, cursor_pos.split('.'))
-            
-            # Request completion for ghost text
-            completion_engine.request_completion(
-                code=code,
-                cursor_line=line,
-                cursor_col=col,
-                file_path=self.file_path,
-                callback=self._handle_ghost_completion
-            )
-        except Exception:
-            pass
-
-    def _handle_ghost_completion(self, suggestions):
-        """Handle completions for ghost text."""
-        if not suggestions:
-            return
-            
-        # Take the best suggestion
-        best_suggestion = suggestions[0]
-        self.after(0, lambda: self.show_ghost_text(best_suggestion.text))
-
-    def show_ghost_text(self, text):
-        """Show ghost text at cursor position."""
-        if self.ghost_text_active or not text:
-            return
-            
-        # Verify cursor hasn't moved
-        if self._ghost_request_pos and self.index(customtkinter.INSERT) != self._ghost_request_pos:
-            return
-
-        try:
-            # Only show if cursor is at end of line? Or just insert.
-            # For simplicity, insert at cursor.
-            self.insert(customtkinter.INSERT, text)
-            
-            logger.info(f"Showing ghost text: '{text[:20]}...'")
-            
-            # Apply ghost tag explicitly
-            start_index = f"{customtkinter.INSERT}-{len(text)}c"
-            end_index = customtkinter.INSERT
-            self.tag_add("ghost", start_index, end_index)
-            self.tag_raise("ghost") # Ensure it stays on top of syntax highlighting
-            
-            self.ghost_text_active = True
-            
-            # Position cursor back to start of ghost text
-            self.mark_set(customtkinter.INSERT, start_index)
-        except Exception as e:
-            logger.error(f"Error showing ghost text: {e}")
-
-    def clear_ghost_text(self):
-        """Remove ghost text."""
-        if not self.ghost_text_active:
-            return
-        logger.info("Clearing ghost text")
-        try:
-            self.delete("ghost.first", "ghost.last")
-            self.ghost_text_active = False
-        except  tkinter.TclError:
-            self.ghost_text_active = False # Reset anyway
-
-    def accept_ghost_text(self):
-        """Convert ghost text to real text."""
-        if not self.ghost_text_active:
-            return
-        logger.info("Accepting ghost text")
-        try:
-            # Get text content
-            text = self.get("ghost.first", "ghost.last")
-            # Remove tag (making it real text)
-            self.tag_remove("ghost", "ghost.first", "ghost.last")
-            self.ghost_text_active = False
-            # Move cursor to end of inserted text
-            self.mark_set(customtkinter.INSERT, f"{customtkinter.INSERT}+{len(text)}c")
-            # Scroll to ensure visibility
-            self.see(customtkinter.INSERT)
-        except tkinter.TclError:
-            self.ghost_text_active = False
