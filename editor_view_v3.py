@@ -12,6 +12,9 @@ from terminal_panel import TerminalPanel
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow
 from ai_assistant import AIAssistant
+from shortcuts_window import ShortcutsWindow
+from about_window import AboutWindow
+from references_window import ReferencesWindow
 from ai_menu import AIActionDialog, AIResultDialog
 from ai_file_operations import AIFileOperations
 from project_context import ProjectContext
@@ -29,194 +32,6 @@ from logger import logger
 from visual_feedback import VisualFeedback
 
 
-class ShortcutsWindow(ctk.CTkToplevel):
-    """Custom scrollable window for shortcuts."""
-    def __init__(self, master):
-        super().__init__(master)
-        self.title("Atajos de Teclado")
-        self.geometry("450x500")
-        self.after(10, self.lift) # Focus
-        
-        # Center window
-        self.update_idletasks()
-        x = master.winfo_x() + (master.winfo_width() // 2) - (450 // 2)
-        y = master.winfo_y() + (master.winfo_height() // 2) - (500 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-
-        # Header
-        header = ctk.CTkLabel(self, text="Atajos de Teclado", font=("Segoe UI", 16, "bold"))
-        header.grid(row=0, column=0, padx=20, pady=15, sticky="w")
-
-        # Scrollable Text area
-        self.text_box = ctk.CTkTextbox(self, font=("Segoe UI", 13), wrap="word")
-        self.text_box.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="nsew")
-
-        shortcuts = """Comandos del Editor:
-        
-Ctrl+N - Nueva Pestaña
-Ctrl+O - Abrir Archivo
-Ctrl+S - Guardar Archivo
-Ctrl+W - Cerrar Pestaña
-Ctrl+F - Buscar y Reemplazar
-Ctrl+Shift+F - Búsqueda en Proyecto
-F12 / Ctrl+Click - Ir a Definición
-Ctrl+` - Alternar Terminal
-Ctrl+, - Configuración
-
-Edición:
-Ctrl+A - Seleccionar Todo
-Ctrl+C - Copiar
-Ctrl+X - Cortar
-Ctrl+V - Pegar
-
-Asistente de IA:
-Ctrl+Shift+Space - Sugerencia (Ghost Text)
-Tab / Enter - Aceptar Sugerencia
-Esc - Limpiar Sugerencia
-
-Vistas (Ctrl+Shift+...):
-E - Explorador
-G - Git / Fuente
-D - Depuración
-A - Asistente IA
-X - Extensiones"""
-
-        self.text_box.insert("1.0", shortcuts)
-        self.text_box.configure(state="disabled") # Read only
-
-        # Close button
-        btn = ctk.CTkButton(self, text="Cerrar", command=self.destroy, width=100)
-        btn.grid(row=2, column=0, pady=(0, 20))
-
-
-class AboutWindow(ctk.CTkToplevel):
-    """Custom scrollable window for About info."""
-    def __init__(self, master):
-        super().__init__(master)
-        self.title("Acerca de NanoEditor")
-        self.geometry("450x500")
-        self.after(10, self.lift) # Focus
-        
-        # Center window
-        self.update_idletasks()
-        x = master.winfo_x() + (master.winfo_width() // 2) - (450 // 2)
-        y = master.winfo_y() + (master.winfo_height() // 2) - (500 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-
-        # Header
-        header = ctk.CTkLabel(self, text="NanoEditor v3.0", font=("Segoe UI", 18, "bold"))
-        header.grid(row=0, column=0, padx=20, pady=15, sticky="w")
-
-        # Scrollable Text area
-        self.text_box = ctk.CTkTextbox(self, font=("Segoe UI", 13), wrap="word")
-        self.text_box.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="nsew")
-
-        info = """NanoEditor es un editor de código moderno, ligero y potente, diseñado para la era de la IA.
-
-Características Principales:
-• Interfaz moderna basada en VS Code.
-• Resaltado de sintaxis optimizado (non-blocking).
-• Gestor de pestañas integrado.
-• Terminal multi-lenguaje funcional.
-• Inteligencia Artificial avanzada (Gemini 1.5).
-• Autocompletado inteligente y Ghost Text.
-• Explorador de archivos y búsqueda global.
-• Soporte para múltiples lenguajes de programación.
-
-Desarrollado con:
-• Python 3.12+
-• CustomTkinter (GUI)
-• Google Gemini SDK
-• Pygments (Sintaxis)
-
-Versión: 3.0.0 (Pre-release)
-Estado: Refactorizado y Optimizado 🚀"""
-
-        self.text_box.insert("1.0", info)
-        self.text_box.configure(state="disabled") # Read only
-
-        # Close button
-        btn = ctk.CTkButton(self, text="Cerrar", command=self.destroy, width=100)
-        btn.grid(row=2, column=0, pady=(0, 20))
-
-
-class ReferencesWindow(ctk.CTkToplevel):
-    """Custom window for symbol references."""
-    def __init__(self, master, references):
-        super().__init__(master)
-        self.title("Referencias de Símbolo")
-        self.geometry("600x450")
-        self.after(10, self.lift) # Focus
-        
-        # Center window
-        self.update_idletasks()
-        x = master.winfo_x() + (master.winfo_width() // 2) - (600 // 2)
-        y = master.winfo_y() + (master.winfo_height() // 2) - (450 // 2)
-        self.geometry(f"+{x}+{y}")
-
-        self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
-
-        # Header
-        count = len(references)
-        header_text = f"Se encontraron {count} referencias" if count > 1 else "Se encontró 1 referencia"
-        header = ctk.CTkLabel(self, text=header_text, font=("Segoe UI", 16, "bold"))
-        header.grid(row=0, column=0, padx=20, pady=15, sticky="w")
-
-        # Scrollable list
-        self.scroll_frame = ctk.CTkScrollableFrame(self, fg_color="transparent")
-        self.scroll_frame.grid(row=1, column=0, padx=20, pady=(0, 10), sticky="nsew")
-        
-        import os
-        for ref in references:
-            # Handle potential None module_path (current file)
-            if ref.module_path:
-                filename = os.path.basename(str(ref.module_path))
-                full_path = str(ref.module_path)
-            else:
-                filename = "Current File"
-                # Try to get current file path from app if possible, or leave as None
-                # If None, opened file logic needs to handle it (or we just jump to line in current tab)
-                full_path = None
-            
-            # Format: filename:line - content
-            display_text = f"{filename}:{ref.line} - {ref.name}"
-            
-            ref_btn = ctk.CTkButton(
-                self.scroll_frame,
-                text=display_text,
-                command=lambda p=full_path, l=ref.line: self._on_click(p, l),
-                anchor="w",
-                font=("Segoe UI", 12),
-                fg_color="transparent",
-                text_color=("#333333", "#CCCCCC"),
-                hover_color=("#E0E0E0", "#3D3D3D")
-            )
-            ref_btn.pack(fill="x", pady=2)
-
-        # Footer / Close button
-        btn = ctk.CTkButton(self, text="Cerrar", command=self.destroy, width=100)
-        btn.grid(row=2, column=0, pady=(10, 20))
-
-    def _on_click(self, file_path, line):
-        """Handle clicking a reference."""
-        if file_path:
-            self.master.open_file_at_line(file_path, line)
-        else:
-            # If no file path, it's the current file, just jump
-            self.master.goto_def.jump_to_line(line)
-            
-        # We don't necessarily want to close the window, 
-        # but let's close it to focus on the code.
-        self.destroy()
-
-
 class App(ctk.CTk, AIHandler, FileHandler):
     def __init__(self):
         super().__init__()
@@ -226,9 +41,22 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.geometry("1400x900")
         self.current_file = None
         self.file_tree_visible = True
-        self.feedback = None  # Initialized after main frame
+        self.feedback = None
         
-        # Set default theme to dark
+        # 1. Setup Main Layout
+        main, content = self._setup_ui()
+        
+        # 2. Initialize Panels & UI Components
+        self._init_panels(content, main)
+        
+        # 3. Initialize Logic Components
+        self._init_components()
+        
+        # 4. Bind Events
+        self._init_bindings()
+
+    def _setup_ui(self):
+        """Setup main window layout and containers."""
         ctk.set_appearance_mode("dark")
         
         # Main container
@@ -243,9 +71,7 @@ class App(ctk.CTk, AIHandler, FileHandler):
         content = ctk.CTkFrame(main, fg_color="transparent")
         content.pack(fill="both", expand=True)
         
-        # ============================================================
-        # CONFIGURACIÓN DE GRID CORREGIDA (enteros en lugar de floats)
-        # ============================================================
+        # Grid configuration
         content.grid_rowconfigure(0, weight=70)   # Editor: 70%
         content.grid_rowconfigure(1, weight=15)   # Terminal: 15%
         content.grid_rowconfigure(2, weight=15)   # Gemini panel: 15%
@@ -253,8 +79,11 @@ class App(ctk.CTk, AIHandler, FileHandler):
         content.grid_columnconfigure(0, weight=0, minsize=48)  # Sidebar
         content.grid_columnconfigure(1, weight=0, minsize=250) # Panel
         content.grid_columnconfigure(2, weight=1)              # Editor
-        # ============================================================
         
+        return main, content
+
+    def _init_panels(self, content, main):
+        """Initialize all UI panels."""
         # Activity bar (sidebar)
         self.sidebar = VSCodeSidebar(content, self)
         self.sidebar.grid(row=0, column=0, rowspan=3, sticky="ns")
@@ -309,7 +138,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
         # Status bar
         self.status_bar = StatusBar(main)
         self.status_bar.pack(fill="x", side="bottom")
-        
+
+    def _init_components(self):
+        """Initialize logic components."""
         # Visual feedback
         self.feedback = VisualFeedback(self)
         
@@ -328,7 +159,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
         )
         
         self.update_status_bar()
-        
+
+    def _init_bindings(self):
+        """Setup event bindings."""
         # Bindings
         self.tab_manager.text_area.bind("<KeyRelease>", self.update_status_bar)
         self.tab_manager.text_area.bind("<Button-1>", self.update_status_bar)

@@ -29,8 +29,8 @@ PI para evitar bloqueos en la UI.
 *Enfoque: Romper el "God Object" y estandarizar la comunicación.*
 
 ### Parte 2.1: Modularización de `App` (`editor_view_v3.py`)
-- [ ] **Extracción de Handlers**: Mover la lógica de ventanas emergentes y atajos de teclado a archivos específicos.
-- [ ] **Limpia de Inicialización**: Reducir el tamaño de `__init__` delegando la configuración de componentes a fábricas o métodos especializados.
+- [x] **Extracción de Handlers**: Mover la lógica de ventanas emergentes y atajos de teclado a archivos específicos.
+- [x] **Limpia de Inicialización**: Reducir el tamaño de `__init__` delegando la configuración de componentes a fábricas o métodos especializados.
 
 ### Parte 2.2: Implementación de Eventos Estándar
 - [ ] **Migración a `EventBus`**: Cambiar llamadas directas entre componentes (ej. FileHandler -> FileTree) por eventos de publicación/suscripción.
