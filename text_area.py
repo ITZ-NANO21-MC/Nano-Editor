@@ -25,6 +25,8 @@ class CodeEditor(customtkinter.CTkTextbox):
         self.bind("<Return>", lambda event: self._on_completion_select(event))
         self.bind("<Tab>", lambda event: self._on_completion_select(event))
         self.bind("<Escape>", self._on_completion_hide)
+        self.bind("<KeyPress>", self._on_key_press_ghost_clear)
+        self.bind("<Button-1>", self._on_click_ghost_clear)
         
         # Vincular eventos de scroll del mouse y configuración
         self.bind("<MouseWheel>", self._on_mousewheel)
@@ -161,6 +163,29 @@ class CodeEditor(customtkinter.CTkTextbox):
             logger.info("Escape pressed: Clearing ghost text")
             self.clear_ghost_text()
             return "break"
+
+    def _on_key_press_ghost_clear(self, event):
+        """Clear ghost text when user starts typing a new character."""
+        # Ignore modifier keys, navigation, and special keys that have their own handlers
+        ignored_keys = ("Shift_L", "Shift_R", "Control_L", "Control_R", "Alt_L", "Alt_R",
+                        "Caps_Lock", "Escape", "Tab", "Return", "Up", "Down", "Left", "Right",
+                        "Home", "End", "Page_Up", "Page_Down", "Insert", "Delete",
+                        "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9", "F10", "F11", "F12")
+        
+        if event.keysym in ignored_keys:
+            return  # Let other handlers deal with these
+        
+        if self.ghost_text_active:
+            logger.info(f"KeyPress '{event.keysym}': Clearing ghost text before new input")
+            self.clear_ghost_text()
+        # Don't return "break" - let the character be inserted
+
+    def _on_click_ghost_clear(self, event):
+        """Clear ghost text when user clicks somewhere else."""
+        if self.ghost_text_active:
+            logger.info("Mouse click: Clearing ghost text")
+            self.clear_ghost_text()
+        # Don't return "break" - let the click proceed normally
 
     def on_key_release(self, event):
         try:
