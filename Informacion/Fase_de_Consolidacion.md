@@ -19,8 +19,9 @@ El plan se divide en **3 Fases de Refactorización**, cada una diseñada para se
 - [x] **Optimización de Caché**: Mejorar la estructura de la caché de autocompletado para búsquedas más rápidas.
 
 ### Parte 1.2: Consolidación de `AIAssistant`
-- [ ] **Uniformidad de Métodos**: Asegurar que todos los métodos de `AIAssistant` usen el nuevo `AIClient` de forma estandarizada.
-- [ ] **Manejo de Errores**: Centralizar la captura de errores de red y cuotas de API para evitar bloqueos en la UI.
+- [x] **Uniformidad de Métodos**: Asegurar que todos los métodos de `AIAssistant` usen el nuevo `AIClient` de forma estandarizada.
+- [x] **Manejo de Errores**: Robustecer el manejo de excepciones en las llamadas asíncronas de IA.
+PI para evitar bloqueos en la UI.
 
 ---
 

@@ -12,23 +12,32 @@ class AIAssistant:
     def __init__(self) -> None:
         self.timeout: int = config.get_int('AI_TIMEOUT', 60)
         self.ai_client = AIClient()
-        self.model_name: str = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
+    def _get_model(self) -> str:
+        """Get currently configured AI model."""
+        return config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
 
     def _run_ai_completion(self, prompt: str, callback: Callable[[str], None]) -> None:
         """Execute AI completion in background thread using LiteLLM client."""
         def target():
-            model_to_use = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
-            logger.debug(f"Requesting AI completion with model: {model_to_use}")
-            self.ai_client.generate_content(prompt, model_to_use, callback)
+            model = self._get_model()
+            logger.debug(f"Async AI Request [{model}]: Starting...")
+            try:
+                self.ai_client.generate_content(prompt, model, callback)
+                logger.debug(f"Async AI Request [{model}]: Completed")
+            except Exception as e:
+                logger.error(f"Async AI Request [{model}] Failed: {e}")
+                callback(f"Error: {str(e)}")
 
         thread = threading.Thread(target=target, daemon=True)
         thread.start()
 
     def complete_code_sync(self, prompt: str) -> str:
         """Execute AI completion synchronously (blocking, for use in worker threads)."""
-        model_to_use = config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
-        logger.debug(f"Requesting AI completion (sync) with model: {model_to_use}")
-        return self.ai_client.generate_content(prompt, model_to_use)
+        model = self._get_model()
+        logger.debug(f"Sync AI Request [{model}]: Starting...")
+        result = self.ai_client.generate_content(prompt, model)
+        logger.debug(f"Sync AI Request [{model}]: Completed")
+        return result
 
     def complete_code(self, code: str, cursor_line: int, callback: Callable[[str], None], project_context: str = "") -> None:
         """Generate code completion suggestions."""
