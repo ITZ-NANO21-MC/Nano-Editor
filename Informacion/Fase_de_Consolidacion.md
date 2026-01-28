@@ -33,8 +33,8 @@ PI para evitar bloqueos en la UI.
 - [x] **Limpia de Inicialización**: Reducir el tamaño de `__init__` delegando la configuración de componentes a fábricas o métodos especializados.
 
 ### Parte 2.2: Implementación de Eventos Estándar
-- [ ] **Migración a `EventBus`**: Cambiar llamadas directas entre componentes (ej. FileHandler -> FileTree) por eventos de publicación/suscripción.
-- [ ] **Events Catalog**: Ampliar la clase `Events` en `event_bus.py` para cubrir todas las interacciones comunes.
+- [x] **Migración a `EventBus`**: Cambiar llamadas directas entre componentes (ej. FileHandler -> FileTree) por eventos de publicación/suscripción.
+- [x] **Events Catalog**: Ampliar la clase `Events` en `event_bus.py` para cubrir todas las interacciones comunes.
 
 ---
 

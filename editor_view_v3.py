@@ -158,6 +158,10 @@ class App(ctk.CTk, AIHandler, FileHandler):
             self.handle_goto_definition
         )
         
+        # Subscribe to events
+        from event_bus import event_bus, Events
+        event_bus.subscribe(Events.FILE_OPEN_REQUEST, self.open_file)
+        
         self.update_status_bar()
 
     def _init_bindings(self):

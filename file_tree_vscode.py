@@ -253,36 +253,21 @@ class VSCodeFileTree(ctk.CTkFrame):
     def on_double_click(self, event: tk.Event) -> None:
         """Handle file double-click."""
         try:
-            print("[DEBUG] Double-click detected")
             item = self.tree.focus()
-            print(f"[DEBUG] Item: {item}")
             values = self.tree.item(item, "values")
-            print(f"[DEBUG] Values: {values}")
             
             if not values:
-                print("[DEBUG] No values found")
                 return
             
             path = values[0]
             file_type = values[1]
-            print(f"[DEBUG] Path: {path}, Type: {file_type}")
             
             if file_type == "file" and os.path.isfile(path):
-                print(f"[DEBUG] Opening file: {path}")
-                print(f"[DEBUG] App exists: {self.app is not None}")
-                print(f"[DEBUG] Has open_file: {hasattr(self.app, 'open_file') if self.app else False}")
-                if self.app and hasattr(self.app, "open_file"):
-                    print(f"[DEBUG] Calling app.open_file({path})")
-                    self.app.open_file(path)
-                    print("[DEBUG] File opened successfully")
-                else:
-                    print("[DEBUG] ERROR: App or open_file not available")
-            else:
-                print(f"[DEBUG] Not a file or doesn't exist")
+                # Request file open via EventBus
+                event_bus.emit(Events.FILE_OPEN_REQUEST, path)
         except (tk.TclError, IndexError, AttributeError, OSError) as e:
-            print(f"[DEBUG] ERROR in on_double_click: {e}")
-            import traceback
-            traceback.print_exc()
+            from logger import logger
+            logger.error(f"Error in on_double_click: {e}")
     
     def refresh(self) -> None:
         """Refresh current directory."""

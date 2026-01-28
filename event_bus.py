@@ -48,5 +48,11 @@ class Events:
     AI_COMPLETED = "ai_completed"
     AI_ERROR = "ai_error"
 
+    # File Tree Events
+    FILE_OPEN_REQUEST = "file_open_request"
+    FILE_RENAMED = "file_renamed"
+    FILE_DELETED = "file_deleted"
+    FOLDER_OPENED = "folder_opened"
+
 # Global event bus instance
 event_bus = EventBus()
