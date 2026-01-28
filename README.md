@@ -59,7 +59,7 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 
 ```bash
 # 1. Clonar repositorio
-git clone <repo-url>
+git clone https://github.com/ITZ-NANO21-MC/Nano-Editor.git
 cd Nano_Editor
 
 # 2. Ejecutar script de setup
