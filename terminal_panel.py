@@ -333,14 +333,10 @@ Type 'help' for available commands, or start typing commands.
         self.cmd_input.delete(0, "end")
         
         # If a process is running, send to stdin
-        if self.process and self.running:
+        if hasattr(self, 'backend') and self.backend and self.running:
             # Display the entered input in terminal
             self._write_to_output(f"{command}\n", "command")
-            try:
-                self.process.stdin.write(command + "\n")
-                self.process.stdin.flush()
-            except Exception as e:
-                self.output_queue.put((f"Error sending input: {e}\n", "error"))
+            self.backend.write(command)
             return
 
         command = command.strip()
@@ -430,77 +426,34 @@ Type 'help' for available commands, or start typing commands.
         self.kill_btn.configure(state="normal")
         self.status_label.configure(text="Running...", text_color="#FFD700")
         
-        def run_command():
-            try:
-                # Determine shell based on OS
-                if platform.system() == "Windows":
-                    shell_cmd = ["cmd", "/c", command]
-                else:
-                    shell_cmd = [self.shell, "-c", command]
-                
-                # Start process
-                self.process = subprocess.Popen(
-                    shell_cmd,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    stdin=subprocess.PIPE,
-                    text=True,
-                    bufsize=0, # Unbuffered for real-time interaction
-                    universal_newlines=True,
-                    cwd=self.cwd,
-                    env=os.environ.copy()
-                )
-                
-                self.running = True
-                
-                # Use separate threads for stdout and stderr to prevent deadlocks
-                # and allow reading character by character for interactive prompts
-                
-                def read_stream(stream, tag):
-                    try:
-                        # Use a small buffer but allow character by character fallback
-                        while self.running and self.process:
-                            # Use read(1) for prompts, but we could optimize to read more if available
-                            char = stream.read(1)
-                            if not char:
-                                break
-                            self.output_queue.put((char, tag))
-                    except Exception:
-                        pass
+        # Import extracted class
+        from terminal_process import TerminalProcess
+        
+        # Create backend if needed (or reuse if we want persistence, but for now new per command)
+        self.backend = TerminalProcess(self.output_queue)
+        
+        def run_thread():
+            # Start process
+            self.backend.start(command, self.cwd, self.shell)
+            self.running = True
+            
+            # Wait for completion
+            returncode = self.backend.wait()
+            
+            # Wait for queue to be processed by UI
+            while not self.output_queue.empty():
+                time.sleep(0.01)
 
-                stdout_thread = threading.Thread(target=read_stream, args=(self.process.stdout, "output"), daemon=True)
-                stderr_thread = threading.Thread(target=read_stream, args=(self.process.stderr, "error"), daemon=True)
-                
-                stdout_thread.start()
-                stderr_thread.start()
-                
-                # Wait for process to end
-                returncode = self.process.wait()
-                
-                # IMPORTANT: Wait for threads to finish draining the streams
-                self.running = False # Signal threads to stop after finishing read
-                stdout_thread.join(timeout=1.0)
-                stderr_thread.join(timeout=1.0)
-                
-                # Wait for queue to be processed by UI
-                # We give it a tiny bit of time or we can check queue explicitly
-                while not self.output_queue.empty():
-                    time.sleep(0.01)
-
-                # Process completed
-                self.after(100, self._process_completed, returncode)
-                
-            except Exception as e:
-                self.output_queue.put((f"Error executing command: {e}\n", "error"))
-                self.after(0, self._process_completed, 1)
+            # Process completed
+            self.after(100, self._process_completed, returncode)
         
         # Start command thread
-        self.process_thread = threading.Thread(target=run_command, daemon=True)
+        self.process_thread = threading.Thread(target=run_thread, daemon=True)
         self.process_thread.start()
-    
+
     def _process_completed(self, returncode: int):
         """Handle process completion."""
-        self.process = None
+        self.backend = None # Cleanup backend
         self.running = False
         self.process_thread = None
         
@@ -516,30 +469,12 @@ Type 'help' for available commands, or start typing commands.
         # Write new prompt
         if self.show_prompt:
             self._write_prompt()
-    
+
     def _kill_process(self):
         """Kill the running process."""
-        if self.process and self.running:
-            try:
-                # Send SIGTERM (Unix) or terminate (Windows)
-                if platform.system() == "Windows":
-                    self.process.terminate()
-                else:
-                    self.process.send_signal(signal.SIGTERM)
-                
-                # Wait a bit, then kill if still running
-                time.sleep(0.5)
-                if self.process.poll() is None:
-                    self.process.kill()
-                
-                self.output_queue.put(("\nProcess terminated by user\n", "error"))
-                
-            except Exception as e:
-                self.output_queue.put((f"Error terminating process: {e}\n", "error"))
-            
-            finally:
-                self.running = False
-                self.after(0, self._process_completed, -1)
+        if self.backend and self.running:
+            self.backend.stop()
+            # The wait() in the thread will return, triggering _process_completed
     
     def _change_directory(self, path: str):
         """Change working directory."""
