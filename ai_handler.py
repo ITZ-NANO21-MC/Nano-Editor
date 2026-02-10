@@ -6,7 +6,7 @@ from ai_utils import process_ai_code_output
 class AIHandler:
     """Mixin or helper for AI Assistant actions in the main App."""
     
-    def _start_streaming_action(self, title: str, allow_insert: bool = True):
+    def _start_streaming_action(self, title: str, allow_insert: bool = True, readonly: bool = False):
         """Helper to start a streaming AI action and return the callback."""
         def insert_cb(text):
             # Clean code if it's meant for insertion into editor
@@ -15,7 +15,8 @@ class AIHandler:
             
         dialog = AIResultDialog(
             self, f"{title} (Streaming)", "", 
-            insert_cb if allow_insert else None
+            insert_cb if allow_insert else None,
+            readonly=readonly
         )
         dialog.grab_set()
         
@@ -42,7 +43,7 @@ class AIHandler:
             return
         
         context = self._get_project_context()
-        on_chunk = self._start_streaming_action("Explaining", allow_insert=False)
+        on_chunk = self._start_streaming_action("Explaining", allow_insert=False, readonly=True)
         self.ai_assistant.explain_code(code, on_chunk, project_context=context, stream=True)
 
     def ai_generate_code(self) -> None:
@@ -94,7 +95,7 @@ class AIHandler:
             messagebox.showwarning("No Code", "Select code to optimize")
             return
         context = self._get_project_context()
-        on_chunk = self._start_streaming_action("Optimizing", allow_insert=False)
+        on_chunk = self._start_streaming_action("Optimizing", allow_insert=False, readonly=True)
         self.ai_assistant.optimize_code(
             code,
             on_chunk,

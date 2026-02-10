@@ -46,9 +46,10 @@ class AIActionDialog(customtkinter.CTkToplevel):
 class AIResultDialog(customtkinter.CTkToplevel):
     """Dialog to show AI results with options to insert or copy."""
     
-    def __init__(self, master, title: str, result: str, insert_callback=None):
+    def __init__(self, master, title: str, result: str, insert_callback=None, readonly: bool = False):
         super().__init__(master)
         self.insert_callback = insert_callback
+        self.readonly = readonly
         self.title(title)
         self.geometry("700x500")
         
@@ -59,6 +60,9 @@ class AIResultDialog(customtkinter.CTkToplevel):
         self.result_text = customtkinter.CTkTextbox(self, font=("monospace", 12))
         self.result_text.grid(row=0, column=0, padx=20, pady=20, sticky="nsew")
         self.result_text.insert("1.0", result)
+        
+        if self.readonly:
+            self.result_text.configure(state="disabled")
         
         # Buttons
         btn_frame = customtkinter.CTkFrame(self)
@@ -91,8 +95,14 @@ class AIResultDialog(customtkinter.CTkToplevel):
 
     def append_text(self, text: str):
         """Append text to the result textbox (for streaming)."""
+        if self.readonly:
+            self.result_text.configure(state="normal")
+        
         self.result_text.insert("end", text)
         self.result_text.see("end")
+        
+        if self.readonly:
+            self.result_text.configure(state="disabled")
 
 
 def create_ai_menu(menu_bar, ai_actions):
