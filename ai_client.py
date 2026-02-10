@@ -24,6 +24,24 @@ class AIClient:
         # Add more providers as needed
         return None
 
+    def _handle_error(self, e: Exception, model: str) -> str:
+        """Format friendly error messages from exceptions."""
+        err_str = str(e)
+        logger.error(f"AI Error ({model}): {err_str}")
+        
+        if "AuthenticationError" in str(type(e).__name__) or "401" in err_str:
+            return f"🚫 Auth Error: Check your API Key for {model}."
+        elif "RateLimitError" in str(type(e).__name__) or "429" in err_str:
+            return f"⏳ Rate Limit: You are sending requests too fast to {model}."
+        elif "NotFoundError" in str(type(e).__name__) or "404" in err_str:
+            return f"❌ Model Not Found: {model} is not available."
+        elif "Timeout" in str(type(e).__name__) or "timed out" in err_str.lower():
+            return f"⏱️ Timeout: The request to {model} took too long (> {self.timeout}s)."
+        elif "ServiceUnavailable" in str(type(e).__name__) or "503" in err_str:
+            return f"🔌 Service Unavailable: {model} provider is down."
+            
+        return f"⚠️ Error: {err_str}"
+
     def generate_content(self, prompt: str, model: str, callback: Optional[Callable[[str], None]] = None) -> str:
         """Generate content from prompt using LiteLLM."""
         api_key = self._get_api_key(model)
@@ -42,8 +60,7 @@ class AIClient:
             return result
 
         except Exception as e:
-            error_msg = f"AI Error ({model}): {str(e)}"
-            logger.error(error_msg)
+            error_msg = self._handle_error(e, model)
             if callback:
                 callback(error_msg)
             return error_msg
@@ -67,4 +84,4 @@ class AIClient:
                     yield content
 
         except Exception as e:
-            yield f"\n[Stream Error: {str(e)}]"
+            yield f"\n\n[{self._handle_error(e, model)}]"

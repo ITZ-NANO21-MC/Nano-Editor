@@ -248,20 +248,21 @@ class TestRunner:
 ```
 
 #### 10. AI Enhancements
-**Estado:** ✅ COMPLETADO (v3.5)
+**Estado:** ✅ COMPLETADO (v3.9)
 
 **Descripción:**
 - AI chat contextual con historial persistente
-- Streaming de respuestas en tiempo real
-- Selección dinámica de 13 modelos Gemini
-- Contexto de proyecto global (análisis de archivos y carpetas)
+- Streaming de respuestas en tiempo real (Implemented v3.9)
+- Selección dinámica de 13 modelos Gemini + LiteLLM (OpenAI, Anthropic)
+- Contexto de proyecto global (FileSystem Awareness & Key Files)
 - Limpieza automática de código generado
+- Centralización de prompts
+- Manejo de errores robusto
 
 **Implementación Actual:**
 ```python
-# ai_handler.py
-class AIHandler:
-    def chat_with_context(self, question) # v3.5
+# ai_assistant.py & ai_client.py
+# Implementación de streaming y contexto robusto
 ```
 
 ---

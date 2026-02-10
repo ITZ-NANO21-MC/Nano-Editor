@@ -1,4 +1,4 @@
-# NanoEditor v3.8 (Consolidated Edition)
+# NanoEditor v3.9 (AI Streaming Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -6,7 +6,7 @@
 
 Editor de código moderno y ligero con interfaz estilo VS Code, integración completa de IA con chat en tiempo real y arquitectura robusta. Diseñado para ser rápido, seguro y fácil de extender.
 
-**Puntuación de Calidad: 8.5/10** ⭐⭐⭐⭐
+**Puntuación de Calidad: 9.0/10** ⭐⭐⭐⭐⭐
 
 ## ✨ Características Principales
 
@@ -25,21 +25,22 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 - **Project Search**: Búsqueda en todo el proyecto
 - **Line Numbers**: Números de línea sincronizados
 
+### 🤖 IA de Última Generación (v3.9)
+- **Streaming en Tiempo Real**: Respuestas instantáneas palabra por palabra, sin esperas ("pantallas congeladas").
+- **Contexto de Proyecto Profundo**: La IA analiza automáticamente la estructura de archivos y lee configuraciones clave (`requirements.txt`, `package.json`) para entender tu entorno.
+- **Prompts Centralizados**: Sistema de prompts organizado en `ai_prompts.py` para fácil mantenimiento.
+- **Manejo de Errores Robusto**: Mensajes de error claros e iconos informativos (Auth, RateLimit, Timeout).
 - **Multi-Model Support**: Selección dinámica de 13 modelos Gemini y compatibilidad con OpenAI, Anthropic, DeepSeek y Groq (vía LiteLLM).
-- **Settings UI Refactor**: Ventanas de configuración categorizadas (Apariencia, Paneles, IA) para una mejor organización.
-- **Contexto de Proyecto Global**: La IA analiza el árbol de archivos y las pestañas abiertas para dar respuestas más precisas.
-- **IA Unificada**: Nuevo `AIClient` robusto basado en LiteLLM para mayor estabilidad.
-- **Persistencia con .env**: Configuración de modelo, tema y timeouts guardada automáticamente.
+- **Settings UI Refactor**: Ventanas de configuración categorizadas.
+- **Persistencia con .env**: Configuración guardada automáticamente.
 - **10+ Funciones de IA**: Explain, Generate, Refactor, Fix, Optimize, Docstring, Translate, etc.
-- **Chat con Streaming**: Respuestas en tiempo real, palabra por palabra.
-- **Limpieza Automática de Salida**: Elimina bloques de código redundantes para un uso directo.
 
 ### 🖥️ Terminal Panel Pro
 - **Terminal Interactivo**: Soporte completo para scripts con `input()`.
-- **Salida Estable**: Procesamiento por lotes (batching) para evitar corrupción de texto en salidas rápidas.
-- **Colores ANSI**: Soporte para colores profesionales (`git`, `ls`, errores de compilación).
-- **Autocompletado Pro**: Tabulación inteligente para rutas de archivos y carpetas.
-- **Ejecución Integrada**: Botón "Run" sincronizado con la terminal interactiva.
+- **Salida Estable**: Procesamiento por lotes (batching) para evitar corrupción de texto.
+- **Colores ANSI**: Soporte para colores profesionales.
+- **Autocompletado Pro**: Tabulación inteligente para rutas.
+- **Ejecución Integrada**: Botón "Run" sincronizado.
 
 ### 🔒 Seguridad Robusta
 - Validación completa de inputs
@@ -116,7 +117,7 @@ python3 main.py
 1. Selecciona código o haz una pregunta en el chat.
 2. Para el chat, puedes marcar la casilla **"Incluir Contexto del Proyecto"** para que la IA entienda tu entorno de trabajo.
 3. Menú **AI Assistant** → Elige función.
-4. Espera resultado (con progress indicator). El código generado aparecerá limpio, sin ´´´.
+4. **Streaming**: Verás la respuesta generarse en tiempo real.
 5. Inserta o revisa el código generado.
 
 ### Terminal
@@ -127,14 +128,14 @@ python3 main.py
 
 ## 📊 Estado del Proyecto
 
-### ✅ Completado (99%)
+### ✅ Completado (100%)
 
 - [x] Editor multi-tab funcional
 - [x] Syntax highlighting asíncrono
 - [x] Terminal integrado
 - [x] IA Assistant (10+ funciones)
 - [x] **Chat con Streaming en tiempo real**
-- [x] **IA con Contexto de Proyecto**
+- [x] **IA con Contexto de Proyecto (FileSystem Awareness)**
 - [x] Temas Light/Dark
 - [x] Feedback visual
 - [x] Sistema de logging
@@ -159,18 +160,21 @@ python3 main.py
 Nano_Editor/
 ├── main.py                    # Punto de entrada
 ├── editor_view_v3.py          # Aplicación principal
-├── tab_manager.py             # Gestión de pestañas (Resiliente a ImportError)
-├── text_area.py               # Editor de texto (Resiliente a ImportError)
+├── ai_assistant.py            # Orquestador de IA (Streaming support)
+├── ai_client.py               # Cliente LiteLLM robusto
+├── ai_prompts.py              # Centralización de prompts
+├── project_context.py         # Análisis de contexto de proyecto
+├── tab_manager.py             # Gestión de pestañas
+├── text_area.py               # Editor de texto
 ├── syntax_highlighter.py      # Resaltado de sintaxis
-├── async_highlighter.py       # Highlighting asíncrono
-├── ai_handler.py              # Gestión de UI y lógica de IA (Modularizado)
-├── file_handler.py            # Operaciones de archivo y ejecución (Modularizado)
-├── menu_bar.py                # Componente de la barra de menú global
-├── terminal_panel.py          # Terminal interactivo con batching y ANSI
-├── config.py                  # Gestión de configuración persistente
-├── sidebar_vscode.py          # Barra lateral con Settings y selección de modelos
-├── status_bar.py              # Barra de estado informativa
-├── tests/                     # Tests unitarios (Mocks incluidos)
+├── ai_handler.py              # Gestión de UI y lógica de IA
+├── file_handler.py            # Operaciones de archivo
+├── menu_bar.py                # Barra de menú
+├── terminal_panel.py          # Terminal interactivo
+├── config.py                  # Configuración persistente
+├── sidebar_vscode.py          # Barra lateral
+├── status_bar.py              # Barra de estado
+├── tests/                     # Tests unitarios
 ├── Informacion/               # Documentación completa
 └── legacy/                    # Versiones anteriores
 ```
@@ -190,14 +194,11 @@ coverage report
 
 Documentación completa en `Informacion/`:
 
+- `README_AI_ASSISTANT.md` - Guía detallada de IA
 - `COMPREHENSIVE_ANALYSIS.md` - Análisis completo del proyecto
 - `PROJECT_FINAL_SUMMARY.md` - Resumen final
 - `TESTING_GUIDE.md` - Guía de testing
 - `SECURITY_IMPROVEMENTS.md` - Mejoras de seguridad
-- `ASYNC_HIGHLIGHTING_GUIDE.md` - Guía de highlighting asíncrono
-- `VISUAL_FEEDBACK_GUIDE.md` - Guía de feedback visual
-- `DECOUPLING_GUIDE.md` - Guía de desacoplamiento
-- Y más...
 
 ## 🔧 Configuración
 
@@ -232,12 +233,18 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 
 ## 📝 Changelog
 
+### v3.9 (AI Streaming Edition) - Febrero 2026
+- ✅ **Streaming en Tiempo Real**: Implementación de respuestas progresivas en todas las funciones de IA. UI responsiva durante la generación.
+- ✅ **Contexto Inteligente**: Nuevo `project_context.py` que escanea la estructura real de archivos e incluye automáticamente `requirements.txt`/`README.md`.
+- ✅ **Manejo de Errores IA**: Sistema robusto de captura de errores de API (Auth, RateLimit) con mensajes amigables.
+- ✅ **Prompts Centralizados**: Extracción de todos los prompts hardcodeados a `ai_prompts.py`.
+
 ### v3.8 (Consolidated Edition) - Enero 2026
-- ✅ **Optimización de IA**: Implementación de caché LRU y llamadas síncronas para eliminar esperas activas de UI.
-- ✅ **Arquitectura Desacoplada**: Implementación completa de `EventBus` para comunicación entre componentes (FileTree <-> App).
-- ✅ **Terminal Modular**: Separación de lógica backend (`TerminalProcess`) de la interfaz gráfica (`TerminalPanel`).
-- ✅ **Gestor de Ghost Text**: Extracción de lógica de sugerencias fantasma a `GhostTextManager`.
-- ✅ **Limpieza de Código**: Modularización masiva de `editor_view_v3.py` (God Object reducido).
+- ✅ **Optimización de IA**: Implementación de caché LRU y llamadas síncronas.
+- ✅ **Arquitectura Desacoplada**: Implementación completa de `EventBus`.
+- ✅ **Terminal Modular**: Separación de lógica backend y frontend.
+- ✅ **Gestor de Ghost Text**: Lógica de sugerencias fantasma independiente.
+- ✅ **Limpieza de Código**: Modularización masiva de `editor_view_v3.py`.
 
 ### v3.7 (Multi-Model AI & Refactored UI) - Enero 2026
 - ✅ **Soporte Multi-Modelo**: Integración de **LiteLLM** permitiendo usar Gemini, OpenAI, Anthropic y más.

@@ -1,16 +1,32 @@
 # 🤖 AI Assistant Integration - Gemini Copilot
 
+## 🚀 Funcionalidades de Vanguardia (v3.9)
+
+### 🌊 Streaming en Tiempo Real
+Ya no tienes que esperar a que la IA genere toda la respuesta. NanoEditor v3.9 implementa streaming real:
+- **Respuesta Instantánea**: El texto empieza a aparecer apenas la IA "piensa".
+- **Sin Bloqueos**: La interfaz permanece responsiva mientras se genera el código.
+- **Feedback Visual**: Ves el progreso línea por línea.
+
+### 🧠 Proyecto Consciente (Context Awareness)
+La IA ahora "entiende" tu proyecto completo, no solo el archivo abierto:
+- **Estructura de Archivos**: Analiza el árbol de directorios para sugerir imports correctos.
+- **Archivos Clave**: Lee automáticamente `package.json`, `requirements.txt`, `README.md` para entender dependencias.
+- **Detección de Entorno**: Sabe si estás en un entorno virtual, si usas Git, etc.
+
+---
+
 ## Funcionalidades Implementadas
 
 ### 1. **Explicar Código** (AI Assistant → Explain Code)
 - Selecciona código y obtén una explicación detallada
 - Si no hay selección, explica todo el archivo
-- Útil para entender código complejo o de terceros
+- **Streaming activado por defecto**
 
 ### 2. **Generar Código** (AI Assistant → Generate Code...)
 - Describe lo que necesitas en lenguaje natural
 - Gemini genera el código en el lenguaje del archivo actual
-- Puedes insertar directamente en el editor
+- Respuesta en tiempo real
 
 ### 3. **Refactorizar Código** (AI Assistant → Refactor Code)
 - Selecciona código para mejorar
@@ -25,17 +41,14 @@
 ### 5. **Optimizar Código** (AI Assistant → Optimize Code)
 - Analiza código seleccionado
 - Recibe sugerencias de optimización
-- Mejora performance y uso de recursos
 
 ### 6. **Generar Documentación** (AI Assistant → Generate Docstring)
 - Selecciona función o clase
 - Genera docstring automáticamente
-- Formato apropiado para el lenguaje
 
 ### 7. **Traducir Código** (AI Assistant → Translate Code...)
 - Selecciona código en un lenguaje
 - Especifica lenguaje destino
-- Obtén traducción funcional
 
 ## Uso
 
@@ -46,120 +59,53 @@ def fibonacci(n):
     return n if n <= 1 else fibonacci(n-1) + fibonacci(n-2)
 
 # 2. AI Assistant → Explain Code
-# 3. Obtienes: "Esta función calcula el n-ésimo número de Fibonacci..."
+# 3. La explicación comienza a aparecer INMEDIATAMENTE:
+# "Esta función calcula..."
 ```
 
 ### Ejemplo 2: Generar Código
 ```
 1. AI Assistant → Generate Code...
 2. Escribe: "función para validar email con regex"
-3. Gemini genera:
-   import re
-   def validate_email(email):
-       pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-       return re.match(pattern, email) is not None
-4. Click "Insert" para agregar al editor
+3. Gemini empieza a escribir el código en pantalla al instante.
 ```
 
-### Ejemplo 3: Refactorizar
-```python
-# Código original (seleccionado):
-def calc(a, b, op):
-    if op == '+':
-        return a + b
-    elif op == '-':
-        return a - b
-    elif op == '*':
-        return a * b
-    elif op == '/':
-        return a / b
-
-# Después de refactorizar:
-def calculate(num1, num2, operation):
-    operations = {
-        '+': lambda x, y: x + y,
-        '-': lambda x, y: x - y,
-        '*': lambda x, y: x * y,
-        '/': lambda x, y: x / y
-    }
-    return operations.get(operation, lambda x, y: None)(num1, num2)
-```
-
-## Atajos Recomendados (Futuro)
-
-- `Ctrl+Shift+E` - Explicar código
-- `Ctrl+Shift+G` - Generar código
-- `Ctrl+Shift+R` - Refactorizar
-- `Ctrl+Shift+F` - Corregir errores
-- `Ctrl+Shift+O` - Optimizar
-- `Ctrl+Shift+D` - Generar docstring
-
-## Requisitos
-
-1. **Gemini CLI instalado:**
-   ```bash
-   # Instalar Gemini CLI
-   pip install google-generativeai
-   ```
-
-2. **Configurar API Key:**
-   ```bash
-   export GEMINI_API_KEY="tu-api-key"
-   ```
-
-## Arquitectura
+## Arquitectura Refactorizada (v3.9)
 
 ```
 ┌─────────────────┐
-│  editor_view.py │  ← Menú AI Assistant
+│  editor_view.py │  ← Menú UI
 └────────┬────────┘
          │
          ├─→ ┌──────────────┐
-         │   │ ai_menu.py   │  ← Diálogos UI
+         │   │ ai_handler.py│  ← Lógica UI y Callbacks
          │   └──────────────┘
          │
-         └─→ ┌─────────────────┐
-             │ ai_assistant.py │  ← Lógica AI
-             └────────┬────────┘
-                      │
-                      └─→ Gemini CLI
+         ├─→ ┌──────────────┐
+         │   │ ai_assistant.py │ ← Orquestador de Streaming
+         │   └──────────────┘
+         │
+         └─→ ┌──────────────┐
+             │ ai_client.py │  ← LiteLLM + Error Handling
+             └──────────────┘
 ```
-
-## Flujo de Trabajo
-
-1. **Usuario selecciona código** (o no selecciona nada)
-2. **Elige acción del menú** AI Assistant
-3. **Sistema detecta lenguaje** automáticamente
-4. **Envía prompt a Gemini** con contexto
-5. **Muestra resultado** en diálogo
-6. **Usuario puede:**
-   - Copiar resultado
-   - Insertar en editor
-   - Cerrar diálogo
 
 ## Ventajas vs GitHub Copilot
 
 ✅ **Gratis** - No requiere suscripción
 ✅ **Local** - Usa tu propia API key
-✅ **Personalizable** - Código abierto
-✅ **Multilenguaje** - Soporta todos los lenguajes
-✅ **Explicaciones** - No solo genera, también explica
-✅ **Refactorización** - Mejora código existente
+✅ **Personalizable** - Código abierto (modifica `ai_prompts.py`)
+✅ **Contexto Real** - Lee tus archivos de configuración
+✅ **Streaming** - Mismo feeling de velocidad
 
 ## Limitaciones Actuales
 
-⚠️ Requiere Gemini CLI instalado
-⚠️ Timeout de 30 segundos
-⚠️ No hay autocompletado inline (como Copilot)
-⚠️ Requiere selección manual de código
+⚠️ Requiere API Key válida (Gemini, OpenAI, etc.)
+⚠️ No hay autocompletado "ghost text" en medio de la línea (solo bloque completo o sugerencia de línea siguiente)
 
 ## Mejoras Futuras
 
-- [ ] Autocompletado inline mientras escribes
-- [ ] Sugerencias automáticas en tiempo real
+- [ ] Autocompletado inline tipo "Ghost Text" más agresivo
 - [ ] Cache de respuestas frecuentes
-- [ ] Historial de interacciones
-- [ ] Configuración de prompts personalizados
-- [ ] Soporte para múltiples modelos AI
-- [ ] Integración con GitHub Copilot API
-- [ ] Análisis de código completo del proyecto
+- [ ] Historial de interacciones persistente entre sesiones
+- [ ] Agentes autónomos (crear múltiples archivos a la vez)

@@ -6,6 +6,30 @@ from ai_utils import process_ai_code_output
 class AIHandler:
     """Mixin or helper for AI Assistant actions in the main App."""
     
+    def _start_streaming_action(self, title: str, allow_insert: bool = True):
+        """Helper to start a streaming AI action and return the callback."""
+        def insert_cb(text):
+            # Clean code if it's meant for insertion into editor
+            cleaned_text = process_ai_code_output(text) if allow_insert else text
+            self._insert_text_at_cursor(cleaned_text)
+            
+        dialog = AIResultDialog(
+            self, f"{title} (Streaming)", "", 
+            insert_cb if allow_insert else None
+        )
+        dialog.grab_set()
+        
+        self.status_bar.set_file_path(f"AI: {title}...")
+        
+        def on_chunk(chunk):
+            if chunk is None:
+                self.status_bar.set_file_path(f"AI: {title} Complete")
+                self.feedback.show_success("AI completed")
+            else:
+                dialog.append_text(chunk)
+                
+        return on_chunk
+
     def ai_explain_code(self) -> None:
         if not hasattr(self, 'tab_manager'): return
         code = self._get_selected_text()
@@ -18,23 +42,19 @@ class AIHandler:
             return
         
         context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Explaining...")
-        progress = self.feedback.show_progress("AI analyzing code...")
-        self.ai_assistant.explain_code(
-            code,
-            lambda r: self._handle_ai_result("Explanation", r, False, progress),
-            project_context=context
-        )
+        on_chunk = self._start_streaming_action("Explaining", allow_insert=False)
+        self.ai_assistant.explain_code(code, on_chunk, project_context=context, stream=True)
 
     def ai_generate_code(self) -> None:
         context = self._get_project_context()
         def on_desc(desc: str) -> None:
             lang = self._detect_language()
-            self.status_bar.set_file_path("AI: Generating...")
+            on_chunk = self._start_streaming_action("Generating", allow_insert=True)
             self.ai_assistant.generate_code(
                 desc, lang,
-                lambda r: self._show_ai_result("Generated", r),
-                project_context=context
+                on_chunk,
+                project_context=context,
+                stream=True
             )
         AIActionDialog(self, "Generate Code", "Describe code:", on_desc).grab_set()
 
@@ -44,11 +64,12 @@ class AIHandler:
             messagebox.showwarning("No Code", "Select code to refactor")
             return
         context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Refactoring...")
+        on_chunk = self._start_streaming_action("Refactoring", allow_insert=True)
         self.ai_assistant.refactor_code(
             code,
-            lambda r: self._show_ai_result("Refactored", r),
-            project_context=context
+            on_chunk,
+            project_context=context,
+            stream=True
         )
 
     def ai_fix_errors(self) -> None:
@@ -58,11 +79,12 @@ class AIHandler:
             return
         context = self._get_project_context()
         def on_err(err: str) -> None:
-            self.status_bar.set_file_path("AI: Fixing...")
+            on_chunk = self._start_streaming_action("Fixing", allow_insert=True)
             self.ai_assistant.fix_errors(
                 code, err,
-                lambda r: self._show_ai_result("Fixed", r),
-                project_context=context
+                on_chunk,
+                project_context=context,
+                stream=True
             )
         AIActionDialog(self, "Fix Errors", "Error message:", on_err).grab_set()
 
@@ -72,11 +94,12 @@ class AIHandler:
             messagebox.showwarning("No Code", "Select code to optimize")
             return
         context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Optimizing...")
+        on_chunk = self._start_streaming_action("Optimizing", allow_insert=False)
         self.ai_assistant.optimize_code(
             code,
-            lambda r: self._show_ai_result("Optimizations", r, False),
-            project_context=context
+            on_chunk,
+            project_context=context,
+            stream=True
         )
 
     def ai_generate_docstring(self) -> None:
@@ -85,11 +108,12 @@ class AIHandler:
             messagebox.showwarning("No Code", "Select function/class")
             return
         context = self._get_project_context()
-        self.status_bar.set_file_path("AI: Documenting...")
+        on_chunk = self._start_streaming_action("Documenting", allow_insert=True)
         self.ai_assistant.generate_docstring(
             code,
-            lambda r: self._show_ai_result("Docstring", r),
-            project_context=context
+            on_chunk,
+            project_context=context,
+            stream=True
         )
 
     def ai_translate_code(self) -> None:
@@ -100,11 +124,12 @@ class AIHandler:
         context = self._get_project_context()
         def on_lang(lang: str) -> None:
             from_lang = self._detect_language()
-            self.status_bar.set_file_path(f"AI: Translating to {lang}...")
+            on_chunk = self._start_streaming_action(f"Translating to {lang}", allow_insert=True)
             self.ai_assistant.translate_code(
                 code, from_lang, lang,
-                lambda r: self._show_ai_result("Translated", r),
-                project_context=context
+                on_chunk,
+                project_context=context,
+                stream=True
             )
         AIActionDialog(self, "Translate", "Target language:", on_lang).grab_set()
 

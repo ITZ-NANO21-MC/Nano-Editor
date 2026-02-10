@@ -4,6 +4,7 @@ from config import config
 from logger import logger
 from ai_utils import process_ai_code_output
 from ai_client import AIClient
+import ai_prompts
 
 
 class AIAssistant:
@@ -12,6 +13,7 @@ class AIAssistant:
     def __init__(self) -> None:
         self.timeout: int = config.get_int('AI_TIMEOUT', 60)
         self.ai_client = AIClient()
+
     def _get_model(self) -> str:
         """Get currently configured AI model."""
         return config.get('AI_MODEL', 'gemini/gemini-2.0-flash')
@@ -31,6 +33,24 @@ class AIAssistant:
         thread = threading.Thread(target=target, daemon=True)
         thread.start()
 
+    def _run_ai_stream(self, prompt: str, callback: Callable[[Optional[str]], None]) -> None:
+        """Execute AI completion in background thread with streaming."""
+        def target():
+            model = self._get_model()
+            logger.debug(f"Async AI Stream [{model}]: Starting...")
+            try:
+                for chunk in self.ai_client.stream_content(prompt, model):
+                    callback(chunk)
+                callback(None) # Signal completion
+                logger.debug(f"Async AI Stream [{model}]: Completed")
+            except Exception as e:
+                logger.error(f"Async AI Stream [{model}] Failed: {e}")
+                callback(f"\n[Error: {str(e)}]")
+                callback(None)
+
+        thread = threading.Thread(target=target, daemon=True)
+        thread.start()
+
     def complete_code_sync(self, prompt: str) -> str:
         """Execute AI completion synchronously (blocking, for use in worker threads)."""
         model = self._get_model()
@@ -39,95 +59,66 @@ class AIAssistant:
         logger.debug(f"Sync AI Request [{model}]: Completed")
         return result
 
-    def complete_code(self, code: str, cursor_line: int, callback: Callable[[str], None], project_context: str = "") -> None:
+    def complete_code(self, code: str, cursor_line: int, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Generate code completion suggestions."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_completion_prompt(code, cursor_line, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Complete this code. Return ONLY the completion, no explanations:
-
-{code}
-
-Complete from line {cursor_line}. Provide the next 1-3 lines of code."""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def explain_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def explain_code(self, code: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Explain selected code."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_explanation_prompt(code, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, callback)
 
-Explain this code concisely:
-
-```
-{code}
-```
-
-Provide a brief explanation of what it does."""
-        self._run_ai_completion(prompt, callback)
-
-    def generate_code(self, description: str, language: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def generate_code(self, description: str, language: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Generate code from description."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_generation_prompt(description, language, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Generate {language} code for: {description}
-
-Return ONLY the code, no explanations or markdown."""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def refactor_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def refactor_code(self, code: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Refactor and improve code."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_refactoring_prompt(code, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Refactor this code to improve readability and efficiency. Return ONLY the refactored code:
-
-```
-{code}
-```"""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def fix_errors(self, code: str, error_msg: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def fix_errors(self, code: str, error_msg: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Fix code errors."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_fix_error_prompt(code, error_msg, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Fix this code error. Return ONLY the corrected code:
-
-Code:
-```
-{code}
-```
-
-Error: {error_msg}"""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def generate_docstring(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def generate_docstring(self, code: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Generate documentation for code."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_docstring_prompt(code, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Generate a docstring for this function/class. Return ONLY the docstring:
-
-```
-{code}
-```"""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def optimize_code(self, code: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def optimize_code(self, code: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Suggest optimizations."""
-        prompt = f"""{project_context}
+        prompt = ai_prompts.get_optimization_prompt(code, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
 
-Analyze this code and suggest optimizations:
-
-```
-{code}
-```
-
-Provide specific suggestions."""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
-
-    def translate_code(self, code: str, from_lang: str, to_lang: str, callback: Callable[[str], None], project_context: str = "") -> None:
+    def translate_code(self, code: str, from_lang: str, to_lang: str, callback: Callable[[str], None], project_context: str = "", stream: bool = False) -> None:
         """Translate code between languages."""
-        prompt = f"""{project_context}
-
-Translate this {from_lang} code to {to_lang}. Return ONLY the translated code:
-
-```
-{code}
-```"""
-        self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))
+        prompt = ai_prompts.get_translation_prompt(code, from_lang, to_lang, project_context)
+        if stream:
+            self._run_ai_stream(prompt, callback)
+        else:
+            self._run_ai_completion(prompt, lambda response: callback(process_ai_code_output(response)))

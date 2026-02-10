@@ -89,6 +89,11 @@ class AIResultDialog(customtkinter.CTkToplevel):
             self.insert_callback(text)
         self.destroy()
 
+    def append_text(self, text: str):
+        """Append text to the result textbox (for streaming)."""
+        self.result_text.insert("end", text)
+        self.result_text.see("end")
+
 
 def create_ai_menu(menu_bar, ai_actions):
     """Create AI menu with all assistant actions."""
