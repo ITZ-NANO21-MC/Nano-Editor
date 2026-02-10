@@ -407,7 +407,11 @@ class App(ctk.CTk, AIHandler, FileHandler):
 
     def _get_project_context(self) -> str:
         """Gathers and returns the project context string."""
-        project_root = os.getcwd()  # Or determine from file_tree
+        # Determine project root from file tree (prioritize) or current working directory
+        project_root = os.getcwd()
+        if hasattr(self, 'file_tree') and self.file_tree and self.file_tree.current_path:
+             project_root = self.file_tree.current_path
+             
         context_builder = ProjectContext(self.tab_manager, self.file_tree, project_root)
         return context_builder.gather_context_for_ai()
 
