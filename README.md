@@ -1,4 +1,4 @@
-# NanoEditor v3.9 (AI Streaming Edition)
+# NanoEditor v3.9.5 (AI Context & Fixes Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -27,9 +27,10 @@ Editor de código moderno y ligero con interfaz estilo VS Code, integración com
 
 ### 🤖 IA de Última Generación (v3.9)
 - **Streaming en Tiempo Real**: Respuestas instantáneas palabra por palabra, sin esperas ("pantallas congeladas").
-- **Contexto de Proyecto Profundo**: La IA analiza automáticamente la estructura de archivos y lee configuraciones clave (`requirements.txt`, `package.json`) para entender tu entorno.
-- **Prompts Centralizados**: Sistema de prompts organizado en `ai_prompts.py` para fácil mantenimiento.
-- **Manejo de Errores Robusto**: Mensajes de error claros e iconos informativos (Auth, RateLimit, Timeout).
+- **Contexto de Proyecto Dinámico**: La IA analiza automáticamente la estructura de archivos y lee configuraciones clave. Se sincroniza automáticamente con la carpeta abierta en el explorador de archivos.
+- **Salida de IA Limpia**: Sistema de prompts ultra-estrictos y post-procesamiento para eliminar Markdown (`**`, backticks, `###`) y JSON no deseado.
+- **Autocompletado Ghost Text Pro**: Corregido error de duplicación de código mediante detección de solapamiento y prompts de continuación.
+- **Optimize Code 2.0**: Ahora devuelve el código completo optimizado con comentarios inline en lugar de simples sugerencias de texto.
 - **Multi-Model Support**: Selección dinámica de 13 modelos Gemini y compatibilidad con OpenAI, Anthropic, DeepSeek y Groq (vía LiteLLM).
 - **Settings UI Refactor**: Ventanas de configuración categorizadas.
 - **Persistencia con .env**: Configuración guardada automáticamente.
@@ -233,11 +234,14 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 
 ## 📝 Changelog
 
+### v3.9.5 (AI Context & Fixes Edition) - Febrero 2026
+- ✅ **Prompt Enforcement**: Sistema de instrucciones estrictas para garantizar salida de texto plano (sin JSON/Markdown accidental).
+- ✅ **Dynamic Context Switch**: La IA ahora prioriza automáticamente la carpeta abierta en el explorador de archivos como raíz del proyecto.
+- ✅ **Ghost Text Fix**: Corregida la duplicación de código en el autocompletado mediante recorte de solapamiento.
+- ✅ **Optimize Code Pro**: Rediseño de la función para devolver código optimizado listo para insertar.
+- ✅ **Read-only AI Dialogs**: Los diálogos informativos ahora son no editables para mayor consistencia.
+
 ### v3.9 (AI Streaming Edition) - Febrero 2026
-- ✅ **Streaming en Tiempo Real**: Implementación de respuestas progresivas en todas las funciones de IA. UI responsiva durante la generación.
-- ✅ **Contexto Inteligente**: Nuevo `project_context.py` que escanea la estructura real de archivos e incluye automáticamente `requirements.txt`/`README.md`.
-- ✅ **Manejo de Errores IA**: Sistema robusto de captura de errores de API (Auth, RateLimit) con mensajes amigables.
-- ✅ **Prompts Centralizados**: Extracción de todos los prompts hardcodeados a `ai_prompts.py`.
 
 ### v3.8 (Consolidated Edition) - Enero 2026
 - ✅ **Optimización de IA**: Implementación de caché LRU y llamadas síncronas.

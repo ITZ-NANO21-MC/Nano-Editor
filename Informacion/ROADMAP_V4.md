@@ -255,9 +255,10 @@ class TestRunner:
 - Streaming de respuestas en tiempo real (Implemented v3.9)
 - Selección dinámica de 13 modelos Gemini + LiteLLM (OpenAI, Anthropic)
 - Contexto de proyecto global (FileSystem Awareness & Key Files)
-- Limpieza automática de código generado
-- Centralización de prompts
-- Manejo de errores robusto
+- Limpieza automática de código generado (v3.9.5: Markdown & JSON stripping)
+- Centralización de prompts y manejo de errores robusto
+- Fix: Autocompletado redundante corregido (v3.9.5)
+- Optimize Code 2.0: Código listo para insertar (v3.9.5)
 
 **Implementación Actual:**
 ```python

@@ -39,8 +39,14 @@ La IA ahora "entiende" tu proyecto completo, no solo el archivo abierto:
 - Gemini proporciona código corregido
 
 ### 5. **Optimizar Código** (AI Assistant → Optimize Code)
-- Analiza código seleccionado
-- Recibe sugerencias de optimización
+- Analiza código seleccionado.
+- **Salida Mejorada**: Gemini devuelve el **código completo optimizado** con comentarios inline explicando los cambios, listo para ser insertado.
+- **Limpieza Automática**: Se eliminan caracteres de formato Markdown (`**`, backticks) para una visualización limpia.
+
+### 8. **Autocompletado (Ghost Text)**
+- Sugerencias inteligentes mientras escribes.
+- **Detección de Solapamiento**: El sistema recorta automáticamente el código que ya escribiste para evitar duplicaciones.
+- **Continuación Pura**: La IA genera solo lo que falta después de tu cursor.
 
 ### 6. **Generar Documentación** (AI Assistant → Generate Docstring)
 - Selecciona función o clase
