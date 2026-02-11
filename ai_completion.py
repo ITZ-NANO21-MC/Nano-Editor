@@ -193,7 +193,7 @@ class AICompletionEngine:
     def _build_completion_prompt(self, context: dict) -> str:
         """Build prompt for AI completion."""
         logger.info(f"Building completion prompt for line {context['line']}, col {context['col']}")
-        return f"""Complete the code at line {context['line']}, column {context['col']}.
+        return f"""You are a code completion engine. Complete the code AFTER the cursor position.
 
 Current code context:
 ```{context['language']}
@@ -202,12 +202,17 @@ Current code context:
 
 The cursor is at line {context['line']}, after: "{context['prefix']}"
 
-IMPORTANT: Provide COMPLETE code blocks. If completing a function, class, or loop, provide the FULL implementation, not just the next line.
-Suggest 3-5 possible completions. Format as JSON:
+CRITICAL RULES:
+1. Return ONLY the text that should be inserted AFTER the cursor.
+2. Do NOT repeat any code that is already written (like the current line or function signature).
+3. If the cursor is at the end of a function definition (e.g. "def foo(a, b):"), return ONLY the function body starting with a newline and proper indentation.
+4. Provide 1-3 suggestions maximum.
+
+Format as JSON:
 {{
   "suggestions": [
     {{
-      "text": "completion text",
+      "text": "the continuation text ONLY",
       "type": "function|variable|class|snippet|line",
       "confidence": 0.95
     }}

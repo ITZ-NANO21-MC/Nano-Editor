@@ -62,8 +62,29 @@ class GhostTextManager:
             
         # Take the best suggestion
         best_suggestion = suggestions[0]
+        suggestion_text = best_suggestion.text
+        
+        # Strip overlap: remove any prefix in the suggestion that matches existing code
+        try:
+            cursor_pos = self._request_pos
+            if cursor_pos:
+                line_num = cursor_pos.split('.')[0]
+                current_line = self.text_widget.get(f"{line_num}.0", f"{line_num}.end").strip()
+                
+                if current_line and suggestion_text.strip().startswith(current_line):
+                    # The suggestion repeats the current line — strip it
+                    suggestion_text = suggestion_text.strip()[len(current_line):]
+                    # Also strip leading newline if the remainder starts with one
+                    if suggestion_text.startswith('\n'):
+                        suggestion_text = suggestion_text[1:]
+                    # If nothing remains after stripping, skip
+                    if not suggestion_text.strip():
+                        return
+        except Exception:
+            pass
+        
         # Schedule display on main thread
-        self.text_widget.after(0, lambda: self.show(best_suggestion.text))
+        self.text_widget.after(0, lambda: self.show(suggestion_text))
 
     def show(self, text):
         """Display ghost text at current cursor position."""
