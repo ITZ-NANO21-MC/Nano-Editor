@@ -1,13 +1,20 @@
 import os
 from tkinter import messagebox
 from ai_menu import AIActionDialog, AIResultDialog
-from ai_utils import process_ai_code_output
+from ai_utils import process_ai_code_output, strip_markdown_formatting
 
 class AIHandler:
     """Mixin or helper for AI Assistant actions in the main App."""
     
-    def _start_streaming_action(self, title: str, allow_insert: bool = True, readonly: bool = False):
-        """Helper to start a streaming AI action and return the callback."""
+    def _start_streaming_action(self, title: str, allow_insert: bool = True, readonly: bool = False, post_process=None):
+        """Helper to start a streaming AI action and return the callback.
+        
+        Args:
+            title: Title for the dialog and status bar.
+            allow_insert: If True, adds an 'Insert' button to paste code into editor.
+            readonly: If True, the dialog text is not editable.
+            post_process: Optional callable to clean the full text after streaming completes.
+        """
         def insert_cb(text):
             # Clean code if it's meant for insertion into editor
             cleaned_text = process_ai_code_output(text) if allow_insert else text
@@ -24,6 +31,19 @@ class AIHandler:
         
         def on_chunk(chunk):
             if chunk is None:
+                # Post-process: clean up full text when streaming is done
+                if post_process:
+                    try:
+                        if readonly:
+                            dialog.result_text.configure(state="normal")
+                        raw_text = dialog.result_text.get("1.0", "end-1c")
+                        cleaned = post_process(raw_text)
+                        dialog.result_text.delete("1.0", "end")
+                        dialog.result_text.insert("1.0", cleaned)
+                        if readonly:
+                            dialog.result_text.configure(state="disabled")
+                    except Exception:
+                        pass
                 self.status_bar.set_file_path(f"AI: {title} Complete")
                 self.feedback.show_success("AI completed")
             else:
@@ -43,7 +63,7 @@ class AIHandler:
             return
         
         context = self._get_project_context()
-        on_chunk = self._start_streaming_action("Explaining", allow_insert=False, readonly=True)
+        on_chunk = self._start_streaming_action("Explaining", allow_insert=False, readonly=True, post_process=strip_markdown_formatting)
         self.ai_assistant.explain_code(code, on_chunk, project_context=context, stream=True)
 
     def ai_generate_code(self) -> None:
@@ -95,7 +115,7 @@ class AIHandler:
             messagebox.showwarning("No Code", "Select code to optimize")
             return
         context = self._get_project_context()
-        on_chunk = self._start_streaming_action("Optimizing", allow_insert=False, readonly=True)
+        on_chunk = self._start_streaming_action("Optimizing", allow_insert=True, post_process=strip_markdown_formatting)
         self.ai_assistant.optimize_code(
             code,
             on_chunk,

@@ -39,6 +39,43 @@ def process_ai_code_output(text: str) -> str:
     return text
 
 
+def strip_markdown_formatting(text: str) -> str:
+    """
+    Strips inline Markdown formatting from AI output text.
+    
+    Removes: **bold**, *italic*, `inline code`, ### headers, --- separators.
+    Preserves the actual text content inside the formatting.
+    
+    Args:
+        text: The AI-generated text potentially containing Markdown formatting.
+    
+    Returns:
+        Clean plain text without Markdown formatting characters.
+    """
+    # Remove markdown code blocks (```...```) and keep content
+    text = re.sub(r'```[a-zA-Z]*\n?', '', text)
+    
+    # Remove bold: **text** -> text
+    text = re.sub(r'\*\*(.+?)\*\*', r'\1', text)
+    
+    # Remove italic: *text* -> text (but not bullet points)
+    text = re.sub(r'(?<!\n)(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)', r'\1', text)
+    
+    # Remove inline code backticks: `text` -> text
+    text = re.sub(r'`([^`]+)`', r'\1', text)
+    
+    # Remove markdown headers: ### Header -> Header
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    
+    # Remove horizontal rules: --- or ***
+    text = re.sub(r'^[-*]{3,}\s*$', '', text, flags=re.MULTILINE)
+    
+    # Clean up multiple blank lines
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    return text.strip()
+
+
 def clean_ai_json_response(text: str) -> str:
     """
     Cleans AI response to extract valid JSON content, stripping markdown code blocks.

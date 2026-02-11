@@ -76,13 +76,16 @@ Code:
 def get_optimization_prompt(code: str, project_context: str = "") -> str:
     return f"""{project_context}
 
-Analyze this code and suggest optimizations in plain text.
+Optimize this code. Return the COMPLETE optimized version of the code.
+Add short comments (using the language's comment syntax) next to each change explaining WHY it was optimized.
+Do NOT return suggestions or explanations as separate text.
+Do NOT use Markdown formatting (no **, no `, no ###).
+Return ONLY the optimized code with inline comments.
 
 Code:
 {code}
 
-{STRICT_INSTRUCTIONS}
-Exclude rule 2 (you can use inline code styles). Use bullet points."""
+{STRICT_INSTRUCTIONS}"""
 
 def get_translation_prompt(code: str, from_lang: str, to_lang: str, project_context: str = "") -> str:
     return f"""{project_context}
