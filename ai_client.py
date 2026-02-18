@@ -42,27 +42,52 @@ class AIClient:
             
         return f"⚠️ Error: {err_str}"
 
-    def generate_content(self, prompt: str, model: str, callback: Optional[Callable[[str], None]] = None) -> str:
+    def generate_content(
+        self, 
+        prompt: str, 
+        model: str, 
+        tools: Optional[list] = None,
+        callback: Optional[Callable[[str, Optional[list]], None]] = None
+    ) -> str:
         """Generate content from prompt using LiteLLM."""
         api_key = self._get_api_key(model)
         
         try:
-            response = litellm.completion(
-                model=model,
-                messages=[{"role": "user", "content": prompt}],
-                api_key=api_key,
-                timeout=self.timeout
-            )
+            kwargs = {
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "api_key": api_key,
+                "timeout": self.timeout
+            }
+            if tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
             
-            result = response.choices[0].message.content or ""
+            response = litellm.completion(**kwargs)
+            
+            message = response.choices[0].message
+            content = message.content or ""
+            tool_calls = message.tool_calls if hasattr(message, "tool_calls") else None
+            
             if callback:
-                callback(result)
-            return result
+                # Callback signature changes to (content, tool_calls)
+                # But to maintain backward compatibility, we check signature or just pass content if tool_calls is None
+                # However, for agent usage, we will use a dedicated callback that expects both.
+                try:
+                    callback(content, tool_calls)
+                except TypeError:
+                    # Fallback for old callbacks that only expect content
+                    callback(content)
+                    
+            return content
 
         except Exception as e:
             error_msg = self._handle_error(e, model)
             if callback:
-                callback(error_msg)
+                try:
+                    callback(error_msg, None)
+                except TypeError:
+                    callback(error_msg)
             return error_msg
 
     def stream_content(self, prompt: str, model: str) -> Generator[str, None, None]:
