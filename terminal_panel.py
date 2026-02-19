@@ -31,6 +31,10 @@ class TerminalPanel(ctk.CTkFrame):
         self.history_index = 0
         self.current_command = ""
         
+        # Agent integration
+        self.agent_output_accumulator = None # List[str] when capturing
+        self.command_finished_event = threading.Event()
+        
         # ANSI Color mapping
         self.ansi_colors = {
             "30": "black", "31": "error", "32": "success", "33": "command",
@@ -298,6 +302,12 @@ Type 'help' for available commands, or start typing commands.
                 self._write_to_output_raw(current_text, current_tag)
                 current_text = text
                 current_tag = tag
+            
+            # Agent Capture
+            if self.agent_output_accumulator is not None:
+                self.agent_output_accumulator.append(text)
+                
+
         
         if current_text:
             self._write_to_output_raw(current_text, current_tag)
@@ -469,6 +479,9 @@ Type 'help' for available commands, or start typing commands.
         # Write new prompt
         if self.show_prompt:
             self._write_prompt()
+
+        # Signal completion for blocking calls
+        self.command_finished_event.set()
 
     def _kill_process(self):
         """Kill the running process."""
@@ -778,3 +791,24 @@ EXAMPLES:
     def clear_terminal(self):
         """Clear terminal (alias)."""
         self._clear_output()
+
+    def run_command_blocking(self, command: str) -> str:
+        """
+        Run a command and block until it finishes, returning the full text output.
+        Used by the AI Agent to execute commands and see results.
+        """
+        # Reset state
+        self.command_finished_event.clear()
+        self.agent_output_accumulator = []
+        
+        # Run command (this will trigger the thread)
+        self.run_command(command)
+        
+        # Wait for completion (blocking the calling thread, NOT the UI thread)
+        self.command_finished_event.wait()
+        
+        # Collect result
+        result = "".join(self.agent_output_accumulator)
+        self.agent_output_accumulator = None
+        
+        return result

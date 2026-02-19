@@ -60,6 +60,21 @@ class AgentPanel(customtkinter.CTkFrame):
 
         # Welcome Message
         self._add_trace_item("system", "🤖 Nano-Agent Ready.\nDescribe a task and I will perform actions to solve it.")
+        
+        # Override terminal_run to use the real TerminalPanel
+        if self.app:
+            def terminal_run_blocking(command):
+                if hasattr(self.app, 'terminal'):
+                    # self.app.terminal is the TerminalPanel instance (aliased in editor_view_v3)
+                    return self.app.terminal.run_command_blocking(command)
+                return "Error: Terminal not available."
+
+            self.agent.tools.register_tool(
+                "terminal_run",
+                terminal_run_blocking,
+                "Run a terminal command securely via the integrated terminal and return the output.",
+                {"type": "object", "properties": {"command": {"type": "string"}}}
+            )
 
     def start_agent(self):
         """Start the agent loop in a thread."""
