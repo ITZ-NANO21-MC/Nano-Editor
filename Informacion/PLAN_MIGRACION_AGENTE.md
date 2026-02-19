@@ -45,9 +45,9 @@ Este documento detalla la hoja de ruta técnica para transformar a NanoEditor de
 **Objetivo:** Que el usuario pueda ver y controlar al agente.
 
 ### Parte 3.1: Panel de Agente (`agent_panel.py`)
-- [ ] **Visualización de Pasos**: UI para ver qué está "pensando" y "haciendo" el agente.
+- [x] **Visualización de Pasos**: UI para ver qué está "pensando" y "haciendo" el agente.
     - Ejemplo: `[🧠 Pensando...]` -> `[🛠️ Ejecutando: ls -la]` -> `[✅ Hecho]`
-- [ ] **Botones de Control**: `Aprobar Acción`, `Cancelar`, `Pausar`.
+- [x] **Botones de Control**: `Aprobar Acción` (Auto), `Cancelar` (Stop), `Pausar` (No impl).
 
 ### Parte 3.2: Puente con la Terminal (`terminal_bridge.py`)
 - [ ] **Captura de Salida**: Conectar la salida del `TerminalPanel` real con el agente, para que "vea" si sus comandos funcionaron.

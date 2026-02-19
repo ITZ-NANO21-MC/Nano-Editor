@@ -9,6 +9,7 @@ from ai_panel_vscode import AIAssistantPanel
 from gemini_panel import GeminiPanel
 from gemini_client import GeminiClient
 from terminal_panel import TerminalPanel
+from agent_panel import AgentPanel
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow
 from ai_assistant import AIAssistant
@@ -134,6 +135,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
             app=self
         )
         self.gemini_panel.grid(row=2, column=2, sticky="nsew", padx=5, pady=5)
+
+        # Agent panel (Sidebar)
+        self.agent_panel = AgentPanel(self.panel_container, app=self)
         
         # Status bar
         self.status_bar = StatusBar(main)
@@ -183,6 +187,7 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.bind("<Control-Shift-A>", lambda e: self.show_ai_assistant())
         self.bind("<Control-Shift-X>", lambda e: self.show_extensions())
         self.bind("<Control-comma>", lambda e: self.show_settings())
+        self.bind("<Control-Shift-Z>", lambda e: self.show_agent()) # New shortcut for Agent
 
         # Bind editing shortcuts directly to text_area to prevent bubbling
         self.tab_manager.text_area.bind("<Control-a>", lambda e: self.select_all())
@@ -261,6 +266,15 @@ class App(ctk.CTk, AIHandler, FileHandler):
             self.panel_container.grid()
             self.file_tree_visible = True
     
+    def show_agent(self):
+        """Show Agent panel."""
+        self._hide_all_panels()
+        self.agent_panel.grid(row=0, column=0, rowspan=3, sticky="nsew")
+        self.current_panel = self.agent_panel
+        if not self.file_tree_visible:
+            self.panel_container.grid()
+            self.file_tree_visible = True
+
     def show_account(self):
         """Show account info."""
         messagebox.showinfo("Account", "NanoEditor v3.0\nAccount management coming soon...")
@@ -268,7 +282,7 @@ class App(ctk.CTk, AIHandler, FileHandler):
     def _hide_all_panels(self):
         """Hide all side panels."""
         for panel in [self.explorer_panel, self.search_panel, self.source_panel, 
-                      self.run_panel, self.ai_panel, self.extensions_panel, self.settings_panel]:
+                      self.run_panel, self.ai_panel, self.extensions_panel, self.settings_panel, self.agent_panel]:
             panel.grid_remove()
 
     def toggle_terminal(self):

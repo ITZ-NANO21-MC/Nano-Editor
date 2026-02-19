@@ -25,6 +25,7 @@ class VSCodeSidebar(ctk.CTkFrame):
             ("code-branch", "source", "Source Control (Ctrl+Shift+G)"),
             ("play", "run", "Run and Debug (Ctrl+Shift+D)"),
             ("robot", "ai", "AI Assistant (Ctrl+Shift+A)"),
+            ("brain", "agent", "Nano-Agent (Ctrl+Shift+Z)"),
             ("boxes", "extensions", "Extensions (Ctrl+Shift+X)"),
         ]
         
@@ -72,7 +73,7 @@ class VSCodeSidebar(ctk.CTkFrame):
         mode = ctk.get_appearance_mode()
         color = "#333333" if mode == "Light" else "#CCCCCC"
         
-        icon_names = ["copy", "search", "code-branch", "play", "robot", "boxes", "user-circle", "cog"]
+        icon_names = ["copy", "search", "code-branch", "play", "robot", "brain", "boxes", "user-circle", "cog"]
         for name in icon_names:
             # The SvgImage is not compatible with CTkImage, so we pass it directly.
             # This might affect automatic color switching on theme change.
@@ -106,6 +107,8 @@ class VSCodeSidebar(ctk.CTkFrame):
             self.app.show_run_debug()
         elif view == "ai":
             self.app.show_ai_assistant()
+        elif view == "agent":
+            self.app.show_agent()
         elif view == "extensions":
             self.app.show_extensions()
         elif view == "settings":
