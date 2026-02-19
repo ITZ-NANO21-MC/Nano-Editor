@@ -26,8 +26,8 @@ Este documento detalla la hoja de ruta técnica para transformar a NanoEditor de
 **Objetivo:** Crear el bucle de razonamiento "Pensar -> Actuar -> Observar -> Repetir".
 
 ### Parte 2.1: Clase Agente (`ai_agent.py`)
-- [ ] **Estado del Agente**: Memoria de corto plazo (historial de chat + resultados de herramientas).
-- [ ] **Thinking Loop**:
+- [x] **Estado del Agente**: Memoria de corto plazo (historial de chat + resultados de herramientas).
+- [x] **Thinking Loop**:
     1.  Recibir objetivo del usuario.
     2.  Analizar estado actual.
     3.  Decidir siguiente paso (Llamar herramienta o Responder).
@@ -36,8 +36,8 @@ Este documento detalla la hoja de ruta técnica para transformar a NanoEditor de
     6.  Repetir hasta cumplir objetivo o llegar a límite de pasos.
 
 ### Parte 2.2: Sistema de Prompts de Agente (`ai_prompts.py`)
-- [ ] **System Prompt de Agente**: Definir la personalidad "autónoma" (eres un ingeniero experto que usa herramientas).
-- [ ] **Reglas de Seguridad**: Instrucciones estrictas sobre no borrar archivos sin permiso, etc.
+- [x] **System Prompt de Agente**: Definir la personalidad "autónoma" (eres un ingeniero experto que usa herramientas).
+- [x] **Reglas de Seguridad**: Instrucciones estrictas sobre no borrar archivos sin permiso, etc.
 
 ---
 
