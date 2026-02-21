@@ -110,7 +110,8 @@ class AgentPanel(customtkinter.CTkFrame):
             self.agent.start_task(
                 user_goal=goal,
                 project_context=context,
-                callback=self._agent_callback
+                callback=self._agent_callback,
+                approval_callback=self._agent_approval_callback
             )
         except Exception as e:
             self._agent_callback("error", str(e))
@@ -120,6 +121,52 @@ class AgentPanel(customtkinter.CTkFrame):
     def _agent_callback(self, event_type, message):
         """Callback from agent to update UI."""
         self.after(0, lambda: self._add_trace_item(event_type, message))
+
+    def _agent_approval_callback(self, tool_name, tool_args) -> bool:
+        """Called from agent thread. Shows dialog on main thread, blocks until choice."""
+        result_container = []
+        event = threading.Event()
+        
+        def show_dialog():
+            dialog = customtkinter.CTkToplevel(self)
+            dialog.title("Security: Approval Required")
+            dialog.geometry("450x300")
+            dialog.attributes("-topmost", True)
+            dialog.transient(self.winfo_toplevel())
+            dialog.grab_set() # Make modal
+            
+            # Content
+            content_frame = customtkinter.CTkScrollableFrame(dialog, fg_color="transparent")
+            content_frame.pack(fill="both", expand=True, padx=20, pady=(20, 10))
+            
+            title_lbl = customtkinter.CTkLabel(content_frame, text=f"⚠️ Agent request to execute:\n{tool_name}", font=("Segoe UI", 14, "bold"))
+            title_lbl.pack(anchor="w", pady=(0, 10))
+            
+            args_str = json.dumps(tool_args, indent=2)
+            args_lbl = customtkinter.CTkLabel(content_frame, text=args_str, font=("Consolas", 11), justify="left")
+            args_lbl.pack(anchor="w")
+            
+            # Buttons
+            btn_frame = customtkinter.CTkFrame(dialog, fg_color="transparent")
+            btn_frame.pack(side="bottom", fill="x", padx=20, pady=20)
+            
+            def handle_result(approved):
+                result_container.append(approved)
+                dialog.destroy()
+                event.set()
+                
+            dialog.protocol("WM_DELETE_WINDOW", lambda: handle_result(False))
+                
+            btn_approve = customtkinter.CTkButton(btn_frame, text="✅ Approve", fg_color="#107C10", hover_color="#0E6B0E", command=lambda: handle_result(True))
+            btn_approve.pack(side="left", padx=10, expand=True)
+            
+            btn_deny = customtkinter.CTkButton(btn_frame, text="❌ Deny", fg_color="#D13438", hover_color="#B71C1C", command=lambda: handle_result(False))
+            btn_deny.pack(side="right", padx=10, expand=True)
+
+        self.after(0, show_dialog)
+        event.wait()
+        
+        return result_container[0] if result_container else False
 
     def _reset_ui(self):
         self.is_running = False

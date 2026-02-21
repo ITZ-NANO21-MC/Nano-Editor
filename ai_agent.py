@@ -10,6 +10,7 @@ from logger import logger
 from ai_client import AIClient
 from ai_tools import ToolRegistry
 import ai_prompts
+from ai_security import AISecurityManager, PermissionLevel
 
 class AIAgent:
     """Autonomous Agent capable of using tools to solve complex tasks."""
@@ -17,6 +18,7 @@ class AIAgent:
     def __init__(self):
         self.client = AIClient()
         self.tools = ToolRegistry()
+        self.security = AISecurityManager(PermissionLevel.SAFE)
         self.max_steps = 10  # Prevent infinite loops
         self.history: List[Dict[str, Any]] = []
         
@@ -24,7 +26,8 @@ class AIAgent:
         self, 
         user_goal: str, 
         project_context: str = "", 
-        callback: Optional[Callable[[str, Optional[str]], None]] = None
+        callback: Optional[Callable[[str, Optional[str]], None]] = None,
+        approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
     ):
         """
         Start the agent loop for a given goal.
@@ -36,6 +39,7 @@ class AIAgent:
                       callback("thinking", "Analyzing...")
                       callback("tool", "Executing: ls -la")
                       callback("answer", "Here is the result...")
+            approval_callback: Function called when a tool needs user approval. Returns True if approved.
         """
         self.history = []
         
@@ -123,9 +127,24 @@ class AIAgent:
                         # Execute
                         try:
                             func_args = json.loads(func_args_str)
-                            result = self.tools.execute_tool(func_name, func_args)
+                            
+                            # Security Check
+                            if self.security.requires_approval(func_name, func_args):
+                                if approval_callback:
+                                    if callback: callback("system", f"⚠️ Asking permission to run {func_name}...")
+                                    approved = approval_callback(func_name, func_args)
+                                else:
+                                    approved = False
+                                    logger.warning(f"Approval required for {func_name} but no callback provided.")
+                            else:
+                                approved = True
+                                
+                            if approved:
+                                result = self.tools.execute_tool(func_name, func_args)
+                            else:
+                                result = "Error: Tool execution denied by user."
                         except Exception as e:
-                            result = f"Error interpreting arguments: {e}"
+                            result = f"Error processing tool call: {e}"
                         
                         logger.info(f"🛠️ Tool Output ({func_name}): {result}")
                         
