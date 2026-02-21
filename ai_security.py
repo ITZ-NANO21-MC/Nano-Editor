@@ -15,10 +15,10 @@ class AISecurityManager:
         # Define which tools are considered safe/unsafe
         # Read-only tools are usually safe. Write/Execute tools are unsafe.
         self.unsafe_tools = {
-            "write_file",
+            "fs_write_file",
             "terminal_run",
-            "create_file",
-            "delete_file",
+            "fs_create_file",
+            "fs_delete_file",
             "replace_file_content"
         }
         

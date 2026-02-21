@@ -14,6 +14,13 @@ La IA ahora "entiende" tu proyecto completo, no solo el archivo abierto:
 - **Archivos Clave**: Lee automáticamente `package.json`, `requirements.txt`, `README.md` para entender dependencias.
 - **Detección de Entorno**: Sabe si estás en un entorno virtual, si usas Git, etc.
 
+### 🤖 Nano-Agent (Modo Autónomo)
+La novedad más potente de v4.0. El asistente ahora es un agente capaz de:
+- **Razonamiento ReAct**: "Piensa" los pasos necesarios antes de actuar.
+- **Uso de Herramientas**: Ejecuta comandos en la terminal, lee/escribe archivos y analiza directorios por sí mismo.
+- **Seguridad Human-in-the-loop**: Te pide permiso antes de realizar acciones "peligrosas" (borrar, escribir, ejecutar shell).
+- **Puente Real con Terminal**: Los comandos del agente se ven y ejecutan en la terminal integrada.
+
 ---
 
 ## Funcionalidades Implementadas
@@ -91,8 +98,16 @@ def fibonacci(n):
          │   │ ai_assistant.py │ ← Orquestador de Streaming
          │   └──────────────┘
          │
+          └─→ ┌──────────────┐
+              │ ai_client.py │  ← LiteLLM + Chat Completion + Error Handling
+              └──────────────┘
+         │
          └─→ ┌──────────────┐
-             │ ai_client.py │  ← LiteLLM + Error Handling
+             │  ai_agent.py │  ← Cerebro del Agente (Bucle ReAct)
+             └──────────────┘
+         │
+         └─→ ┌──────────────┐
+             │ ai_security.py│ ← Sistema de Permisos y Validación
              └──────────────┘
 ```
 
@@ -114,4 +129,4 @@ def fibonacci(n):
 - [ ] Autocompletado inline tipo "Ghost Text" más agresivo
 - [ ] Cache de respuestas frecuentes
 - [ ] Historial de interacciones persistente entre sesiones
-- [ ] Agentes autónomos (crear múltiples archivos a la vez)
+- [x] Agentes autónomos (crear múltiples archivos a la vez) [IMPLEMENTADO v4.0]

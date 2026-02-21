@@ -170,15 +170,10 @@ class AIAgent:
         return "Max steps reached."
 
     def _call_llm(self, messages, tools=None):
-        """Helper to call LLM directly (temporary bypass of AIClient until refactor)."""
-        import litellm
-        model = self.client._get_model() if hasattr(self.client, '_get_model') else config.get('AI_MODEL', 'gemini/gemini-2.0-flash-exp')
-        api_key = self.client._get_api_key(model)
-        
-        return litellm.completion(
-            model=model,
+        """Use AIClient for chat completions."""
+        model = config.get('AI_MODEL', 'gemini/gemini-2.0-flash-exp')
+        return self.client.chat_completion(
             messages=messages,
-            tools=tools,
-            tool_choice="auto" if tools else None,
-            api_key=api_key
+            model=model,
+            tools=tools
         )

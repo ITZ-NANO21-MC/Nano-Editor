@@ -90,6 +90,37 @@ class AIClient:
                     callback(error_msg)
             return error_msg
 
+    def chat_completion(
+        self,
+        messages: list,
+        model: str,
+        tools: Optional[list] = None,
+        stream: bool = False
+    ):
+        """
+        Request a chat completion with support for tool calling.
+        Returns the full LiteLLM response object.
+        """
+        api_key = self._get_api_key(model)
+        
+        try:
+            kwargs = {
+                "model": model,
+                "messages": messages,
+                "api_key": api_key,
+                "timeout": self.timeout,
+                "stream": stream
+            }
+            if tools:
+                kwargs["tools"] = tools
+                kwargs["tool_choice"] = "auto"
+                
+            return litellm.completion(**kwargs)
+
+        except Exception as e:
+            logger.error(f"Chat Completion Error: {e}")
+            raise e
+
     def stream_content(self, prompt: str, model: str) -> Generator[str, None, None]:
         """Stream content from prompt using LiteLLM."""
         api_key = self._get_api_key(model)

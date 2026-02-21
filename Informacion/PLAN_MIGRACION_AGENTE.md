@@ -54,17 +54,16 @@ Este documento detalla la hoja de ruta técnica para transformar a NanoEditor de
 
 ---
 
-## 🛡️ Fase 4: Seguridad y "Human-in-the-loop"
-**Objetivo:** Evitar que el agente destruya el proyecto accidentalmente.
+## 🛡️## Fase 4: Seguridad y Human-in-the-loop (NUEVO)
+**Objetivo:** Evitar que el agente rompa cosas sin querer.
 
-### Parte 4.1: Sistema de Permisos
-- [ ] **Niveles de Autonomía**:
-    - *Paranoico*: Confirmar cada acción.
-    - *Seguro*: Autonomía en lectura, confirmar escritura/ejecución.
-    - *Autónomo*: (Solo para usuarios avanzados) Ejecutar todo sin preguntar.
+### Parte 4.1: Sistema de Permisos (`ai_security.py`)
+- [x] **Niveles de Seguridad**: Crear sistema con niveles `PARANOID`, `SAFE`, `AUTONOMOUS`.
+- [x] **Reglas**: Definir qué herramientas son seguras (ej. `list_dir`) y cuáles peligrosas (ej. `write_file`, `terminal_run`).
 
-### Parte 4.2: Sandboxing (Futuro)
-- [ ] Ejecutar comandos en un entorno aislado si es posible.
+### Parte 4.2: Callback de Aprobación
+- [x] **Hook en AIAgent**: Modificar el agente para pausar antes de ejecutar herramientas peligrosas y pedir permiso.
+- [x] **UI de Aprobación**: Mostrar un modal emergente en el `AgentPanel` con los detalles de qué quiere hacer el agente y botones de "Aceptar" y "Rechazar".
 
 ---
 
