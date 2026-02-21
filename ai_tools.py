@@ -71,8 +71,11 @@ class ToolRegistry:
         )
 
     def register_tool(self, name: str, func: Callable, description: str, parameters: Dict[str, Any]):
-        """Register a new tool with its JSON schema."""
+        """Register a new tool with its JSON schema. Replaces if already exists."""
         self._tools[name] = func
+        
+        # Remove existing schema with same name to avoid duplicates
+        self._schemas = [s for s in self._schemas if s.get("function", {}).get("name") != name]
         
         schema = {
             "type": "function",
@@ -103,8 +106,15 @@ class ToolRegistry:
 
     # --- Tool Implementations ---
 
+    def _resolve_path(self, path: str) -> str:
+        """Resolve relative paths to absolute using CWD."""
+        if not os.path.isabs(path):
+            return os.path.abspath(path)
+        return path
+
     def fs_read_file(self, path: str) -> str:
         try:
+            path = self._resolve_path(path)
             if not os.path.exists(path):
                 return f"❌ Error: File not found: {path}"
             with open(path, 'r', encoding='utf-8') as f:
@@ -114,6 +124,7 @@ class ToolRegistry:
 
     def fs_list_dir(self, path: str) -> str:
         try:
+            path = self._resolve_path(path)
             if not os.path.exists(path):
                 return f"❌ Error: Directory not found: {path}"
             items = os.listdir(path)
@@ -129,9 +140,10 @@ class ToolRegistry:
 
     def fs_write_file(self, path: str, content: str) -> str:
         try:
-            # Basic safety check (optional: prevent writing outside project)
-            # For now, we assume the AI is trusted or monitored
-            os.makedirs(os.path.dirname(path), exist_ok=True)
+            path = self._resolve_path(path)
+            parent_dir = os.path.dirname(path)
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
             with open(path, 'w', encoding='utf-8') as f:
                 f.write(content)
             return f"✅ file written: {path}"

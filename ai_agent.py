@@ -104,6 +104,11 @@ class AIAgent:
                 
                 response = self._call_llm(self.history, tools=self.tools.get_tool_schemas())
                 
+                if not response.choices:
+                    logger.error("Empty response from LLM (no choices)")
+                    if callback: callback("error", "The model returned an empty response. Retrying...")
+                    continue
+                
                 message = response.choices[0].message
                 content = message.content
                 tool_calls = getattr(message, 'tool_calls', None)
@@ -115,7 +120,19 @@ class AIAgent:
                     if callback: callback("thought", content)
                 
                 if tool_calls:
-                    self.history.append(message) # Add the assistant message with tool_calls
+                    # Serialize to clean dict to avoid Pydantic issues on next call
+                    tool_calls_list = []
+                    for tc in tool_calls:
+                        tool_calls_list.append({
+                            "id": tc.id,
+                            "type": "function",
+                            "function": {
+                                "name": tc.function.name,
+                                "arguments": tc.function.arguments
+                            }
+                        })
+                    assistant_msg = {"role": "assistant", "content": content or "", "tool_calls": tool_calls_list}
+                    self.history.append(assistant_msg)
                     
                     for tc in tool_calls:
                         func_name = tc.function.name
