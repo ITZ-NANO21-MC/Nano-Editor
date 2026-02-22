@@ -6,7 +6,7 @@ from tab_manager import TabManager
 from file_tree import FileTree
 from gemini_panel import GeminiPanel
 from gemini_client import GeminiClient
-from terminal_panel import TerminalPanel
+from terminal.panel import TerminalPanel
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow
 from ai_assistant import AIAssistant

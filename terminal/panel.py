@@ -437,7 +437,7 @@ Type 'help' for available commands, or start typing commands.
         self.status_label.configure(text="Running...", text_color="#FFD700")
         
         # Import extracted class
-        from terminal_process import TerminalProcess
+        from terminal.process import TerminalProcess
         
         # Create backend if needed (or reuse if we want persistence, but for now new per command)
         self.backend = TerminalProcess(self.output_queue)

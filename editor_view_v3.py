@@ -8,7 +8,7 @@ from sidebar_vscode import VSCodeSidebar, SearchPanel, SourceControlPanel, RunDe
 from ai_panel_vscode import AIAssistantPanel
 from gemini_panel import GeminiPanel
 from gemini_client import GeminiClient
-from terminal_panel import TerminalPanel
+from terminal.panel import TerminalPanel
 from agent_panel import AgentPanel
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow

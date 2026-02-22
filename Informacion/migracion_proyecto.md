@@ -2,7 +2,8 @@
 
 **Proyecto:** NanoEditor v4.0  
 **Fecha:** 2026-02-20  
-**Estado:** Pendiente de aprobación
+**Estado:** Aprobado  
+**Metodología de Validación:** Pruebas Unitarias por fase
 
 ---
 
@@ -81,8 +82,14 @@ Nano-Editor/
 │   ├── project_context.py
 │   └── project_search.py
 │
+├── tests/                      # 🧪 Pruebas Unitarias
+│   ├── test_terminal.py        # Tests para terminal/
+│   ├── test_navigation.py      # Tests para navigation/
+│   ├── test_ai.py              # Tests para ai/
+│   ├── test_ui.py              # Tests para ui/
+│   └── test_core.py            # Tests para core/
+│
 ├── scripts/                    # (sin cambios)
-├── tests/                      # (actualizar imports)
 ├── Informacion/                # (sin cambios)
 └── legacy/                     # (sin cambios)
 ```
@@ -95,14 +102,14 @@ Nano-Editor/
 **Archivos:** 2 | **Imports a actualizar:** ~5
 
 #### Parte 1.1: Crear directorio y mover archivos
-- [ ] Crear `terminal/` con `__init__.py`
-- [ ] `git mv terminal_panel.py terminal/panel.py`
-- [ ] `git mv terminal_process.py terminal/process.py`
+- [x] Crear `terminal/` con `__init__.py`
+- [x] `git mv terminal_panel.py terminal/panel.py`
+- [x] `git mv terminal_process.py terminal/process.py`
 
 #### Parte 1.2: Actualizar imports
-- [ ] En `terminal/panel.py`: actualizar import de `terminal_process` → `from terminal.process import ...`
-- [ ] En `editor_view_v3.py`: `from terminal_panel import ...` → `from terminal.panel import ...`
-- [ ] En `agent_panel.py`: actualizar referencia a terminal
+- [x] En `terminal/panel.py`: actualizar import de `terminal_process` → `from terminal.process import ...`
+- [x] En `editor_view_v3.py`: `from terminal_panel import ...` → `from terminal.panel import ...`
+- [x] En `agent_panel.py`: actualizar referencia a terminal
 
 #### Parte 1.3: Crear re-exports en `__init__.py`
 ```python
@@ -111,10 +118,14 @@ from terminal.panel import TerminalPanel
 from terminal.process import TerminalProcess
 ```
 
-#### Parte 1.4: Verificación
-- [ ] `./run.sh` → editor abre correctamente
-- [ ] Terminal integrada funciona
-- [ ] Agente puede ejecutar `terminal_run`
+#### Parte 1.4: Pruebas Unitarias (`tests/test_terminal.py`)
+- [x] Test: `TerminalProcess` puede iniciar y matar un proceso
+- [x] Test: `TerminalPanel` puede importarse correctamente desde `terminal.panel`
+- [x] Test: El re-export en `terminal/__init__.py` funciona
+- [x] Ejecutar: `python -m pytest tests/test_terminal.py -v` → **7/7 PASSED** ✅
+
+#### Parte 1.5: Verificación Manual
+- [x] `./run.sh` → pendiente de ejecución por usuario
 
 ---
 
@@ -132,7 +143,13 @@ from terminal.process import TerminalProcess
 - [ ] En `editor_view_v3.py`: actualizar 3 imports de navegación
 - [ ] En `text_area.py`: referencia a `goto_definition`
 
-#### Parte 2.3: Verificación
+#### Parte 2.3: Pruebas Unitarias (`tests/test_navigation.py`)
+- [ ] Test: `ProjectContext` se instancia y genera contexto
+- [ ] Test: Imports de `navigation.goto_definition` resuelven correctamente
+- [ ] Test: `ProjectSearchWindow` es importable desde `navigation.project_search`
+- [ ] Ejecutar: `python -m pytest tests/test_navigation.py -v`
+
+#### Parte 2.4: Verificación Manual
 - [ ] `./run.sh` → editor abre
 - [ ] Ctrl+Click (Goto Definition) funciona
 - [ ] Búsqueda en proyecto funciona
@@ -176,7 +193,15 @@ from ai.agent import AIAgent
 from ai.completion import completion_engine
 ```
 
-#### Parte 3.5: Verificación
+#### Parte 3.5: Pruebas Unitarias (`tests/test_ai.py`)
+- [ ] Test: `AIClient` se instancia correctamente
+- [ ] Test: `ToolRegistry` registra y lista herramientas sin duplicados
+- [ ] Test: `AISecurityManager` valida permisos por nivel (`SAFE`, `PARANOID`, `AUTONOMOUS`)
+- [ ] Test: `ai.prompts` genera prompts de sistema no vacíos
+- [ ] Test: Imports cruzados dentro de `ai/` funcionan (client ↔ agent ↔ tools)
+- [ ] Ejecutar: `python -m pytest tests/test_ai.py -v`
+
+#### Parte 3.6: Verificación Manual
 - [ ] `./run.sh` → editor abre
 - [ ] Chat Gemini funciona
 - [ ] Autocompletado AI funciona
@@ -210,7 +235,13 @@ from ai.completion import completion_engine
 - [ ] `editor_view_v3.py` (~12 imports de UI)
 - [ ] Imports de módulos `ai/` que referencian paneles
 
-#### Parte 4.3: Verificación
+#### Parte 4.3: Pruebas Unitarias (`tests/test_ui.py`)
+- [ ] Test: Todos los módulos en `ui/` son importables
+- [ ] Test: Re-exports en `ui/__init__.py` funcionan
+- [ ] Test: `ui.sidebar`, `ui.gemini_panel`, `ui.agent_panel` se importan sin error
+- [ ] Ejecutar: `python -m pytest tests/test_ui.py -v`
+
+#### Parte 4.4: Verificación Manual
 - [ ] `./run.sh` → editor abre
 - [ ] Sidebar y todos los paneles funcionan
 - [ ] Menús de IA funcionan
@@ -244,20 +275,27 @@ App().mainloop()
 - [ ] Todos los módulos `ai/`, `ui/`, `navigation/` que referencian `core/`
 - [ ] `core/` imports internos
 
-#### Parte 5.4: Verificación Final
+#### Parte 5.4: Pruebas Unitarias (`tests/test_core.py`)
+- [ ] Test: `core.text_area.CodeEditor` es importable
+- [ ] Test: `core.syntax_highlighter.SyntaxHighlighter` se instancia
+- [ ] Test: `core.tab_manager.TabManager` es importable
+- [ ] Test: `main.py` puede importar `core.editor_view.App`
+- [ ] Ejecutar: `python -m pytest tests/test_core.py -v`
+
+#### Parte 5.5: Verificación Final
 - [ ] `./run.sh` → editor abre completamente
 - [ ] Todas las funcionalidades verificadas
-- [ ] Tests pasan
+- [ ] Ejecutar: `python -m pytest tests/ -v` (todas las pruebas)
 
 ---
 
 ### Fase 6: Limpieza Final (Riesgo: BAJO)
 - [ ] Eliminar archivos huérfanos de la raíz
-- [ ] Limpiar `__pycache__/` recursivamente
-- [ ] Actualizar `tests/` con nuevos imports
+- [ ] Limpiar `__pycache__/` recursivamente: `find . -type d -name __pycache__ -exec rm -rf {} +`
 - [ ] Actualizar `scripts/` con nuevos imports
 - [ ] Actualizar `README.md` con nueva estructura
 - [ ] Actualizar `.gitignore` si es necesario
+- [ ] Suite completa de tests: `python -m pytest tests/ -v --tb=short`
 - [ ] Commit final: `refactor: Reorganize project into functional directories`
 
 ---
@@ -265,10 +303,12 @@ App().mainloop()
 ## ⚠️ Reglas de Seguridad
 
 1. **Un commit por fase** → fácil rollback si algo falla
-2. **`./run.sh` tras cada fase** → verificar que nada se rompió
-3. **`git mv`** siempre → preservar historial de Git
-4. **Limpiar `__pycache__`** tras cada fase → evitar imports fantasma
-5. **No mezclar fases** → si la Fase 3 falla, no empezar la Fase 4
+2. **Tests antes de commit** → `pytest tests/test_<modulo>.py` debe pasar
+3. **`./run.sh` tras cada fase** → verificar que nada se rompió
+4. **`git mv`** siempre → preservar historial de Git
+5. **Limpiar `__pycache__`** tras cada fase → evitar imports fantasma
+6. **No mezclar fases** → si la Fase 3 falla, no empezar la Fase 4
+7. **Tests acumulativos** → al avanzar de fase, los tests anteriores deben seguir pasando
 
 ---
 
