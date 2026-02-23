@@ -2,7 +2,7 @@
 import customtkinter as ctk
 import tkinter as tk
 from typing import List, Callable
-from ai_completion import CompletionSuggestion
+from ai.completion import CompletionSuggestion
 
 
 class AICompletionPopup:

@@ -5,10 +5,10 @@ import time
 from typing import Optional, Callable, List, Tuple
 from dataclasses import dataclass
 from collections import OrderedDict
-from ai_assistant import AIAssistant
+from ai.assistant import AIAssistant
 from config import config
 from logger import logger
-from ai_utils import clean_ai_json_response
+from ai.utils import clean_ai_json_response
 
 
 @dataclass

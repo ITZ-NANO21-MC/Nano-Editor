@@ -4,7 +4,7 @@ import threading
 import datetime
 import re
 from typing import Callable, Optional
-from ai_utils import process_ai_code_output, clean_ai_json_response
+from ai.utils import process_ai_code_output, clean_ai_json_response
 from tkfontawesome import icon_to_image
 from syntax_highlighter import SyntaxHighlighter
 

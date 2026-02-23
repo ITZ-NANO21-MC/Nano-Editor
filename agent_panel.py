@@ -2,8 +2,8 @@ import customtkinter
 import threading
 import json
 from typing import Callable, Optional
-from ai_agent import AIAgent
-from ai_utils import process_ai_code_output
+from ai.agent import AIAgent
+from ai.utils import process_ai_code_output
 from syntax_highlighter import SyntaxHighlighter
 
 class AgentPanel(customtkinter.CTkFrame):

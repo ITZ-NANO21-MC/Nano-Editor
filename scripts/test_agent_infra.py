@@ -5,8 +5,8 @@ import logging
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from ai_client import AIClient
-from ai_tools import ToolRegistry
+from ai.client import AIClient
+from ai.tools import ToolRegistry
 from config import config
 
 # Configure logging

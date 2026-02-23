@@ -4,8 +4,8 @@ import json
 import datetime
 from pathlib import Path
 from typing import Callable, Optional
-from ai_assistant import AIAssistant
-from ai_utils import process_ai_code_output, clean_ai_json_response
+from ai.assistant import AIAssistant
+from ai.utils import process_ai_code_output, clean_ai_json_response
 
 
 class AIFileOperations:

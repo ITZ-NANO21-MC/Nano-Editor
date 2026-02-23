@@ -4,7 +4,7 @@ import jedi
 from syntax_highlighter import SyntaxHighlighter
 from completion_popup import CompletionPopup
 from async_highlighter import AsyncHighlighter
-from ai_completion import completion_engine
+from ai.completion import completion_engine
 from ai_completion_popup import AICompletionPopup
 from logger import logger
 
@@ -45,7 +45,7 @@ class CodeEditor(customtkinter.CTkTextbox):
         
         
         # Ghost Text Manager
-        from ghost_text_manager import GhostTextManager
+        from ai.ghost_text import GhostTextManager
         self.ghost_manager = GhostTextManager(self)
         
     def _configure_scrollbar_sync(self):

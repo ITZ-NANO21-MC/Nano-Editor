@@ -8,9 +8,9 @@ from gemini_panel import GeminiPanel
 from gemini_client import GeminiClient
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow
-from ai_assistant import AIAssistant
+from ai.assistant import AIAssistant
 from ai_menu import create_ai_menu, AIActionDialog, AIResultDialog
-from ai_file_operations import AIFileOperations
+from ai.file_operations import AIFileOperations
 import os
 
 

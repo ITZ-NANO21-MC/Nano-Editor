@@ -1,7 +1,7 @@
 import os
 from tkinter import messagebox
 from ai_menu import AIActionDialog, AIResultDialog
-from ai_utils import process_ai_code_output, strip_markdown_formatting
+from ai.utils import process_ai_code_output, strip_markdown_formatting
 
 class AIHandler:
     """Mixin or helper for AI Assistant actions in the main App."""

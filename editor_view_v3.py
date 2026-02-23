@@ -12,17 +12,17 @@ from terminal.panel import TerminalPanel
 from agent_panel import AgentPanel
 from status_bar import StatusBar
 from find_replace import FindReplaceWindow
-from ai_assistant import AIAssistant
+from ai.assistant import AIAssistant
 from shortcuts_window import ShortcutsWindow
 from about_window import AboutWindow
 from references_window import ReferencesWindow
 from ai_menu import AIActionDialog, AIResultDialog
-from ai_file_operations import AIFileOperations
+from ai.file_operations import AIFileOperations
 from navigation.project_context import ProjectContext
 from navigation.project_search import ProjectSearchWindow
 from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
-from ai_utils import process_ai_code_output
-from ai_handler import AIHandler
+from ai.utils import process_ai_code_output
+from ai.handler import AIHandler
 from file_handler import FileHandler
 from menu_bar import ModernMenuBar
 import os

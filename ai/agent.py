@@ -7,10 +7,10 @@ import traceback
 from typing import List, Dict, Any, Optional, Callable
 from config import config
 from logger import logger
-from ai_client import AIClient
-from ai_tools import ToolRegistry
-import ai_prompts
-from ai_security import AISecurityManager, PermissionLevel
+from ai.client import AIClient
+from ai.tools import ToolRegistry
+import ai.prompts as ai_prompts
+from ai.security import AISecurityManager, PermissionLevel
 
 class AIAgent:
     """Autonomous Agent capable of using tools to solve complex tasks."""

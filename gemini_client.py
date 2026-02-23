@@ -2,7 +2,7 @@
 import threading
 from typing import Callable, Optional
 from config import config
-from ai_client import AIClient
+from ai.client import AIClient
 
 
 class GeminiClient:

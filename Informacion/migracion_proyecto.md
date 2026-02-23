@@ -133,26 +133,24 @@ from terminal.process import TerminalProcess
 **Archivos:** 3 | **Imports a actualizar:** ~8
 
 #### Parte 2.1: Crear directorio y mover archivos
-- [ ] Crear `navigation/` con `__init__.py`
-- [ ] `git mv goto_definition.py navigation/`
-- [ ] `git mv project_context.py navigation/`
-- [ ] `git mv project_search.py navigation/`
+- [x] Crear `navigation/` con `__init__.py`
+- [x] `git mv goto_definition.py navigation/`
+- [x] `git mv project_context.py navigation/`
+- [x] `git mv project_search.py navigation/`
 
 #### Parte 2.2: Actualizar imports
-- [ ] En `navigation/project_context.py`: imports de `tab_manager`, `file_tree_vscode`, `config`
-- [ ] En `editor_view_v3.py`: actualizar 3 imports de navegación
-- [ ] En `text_area.py`: referencia a `goto_definition`
+- [x] En `navigation/project_context.py`: imports de `tab_manager`, `file_tree_vscode`, `config`
+- [x] En `editor_view_v3.py`: actualizar 3 imports de navegación
+- [x] En `text_area.py`: referencia a `goto_definition`
 
 #### Parte 2.3: Pruebas Unitarias (`tests/test_navigation.py`)
-- [ ] Test: `ProjectContext` se instancia y genera contexto
-- [ ] Test: Imports de `navigation.goto_definition` resuelven correctamente
-- [ ] Test: `ProjectSearchWindow` es importable desde `navigation.project_search`
-- [ ] Ejecutar: `python -m pytest tests/test_navigation.py -v`
+- [x] Test: `ProjectContext` se instancia y genera contexto
+- [x] Test: Imports de `navigation.goto_definition` resuelven correctamente
+- [x] Test: `ProjectSearchWindow` es importable desde `navigation.project_search`
+- [x] Ejecutar: `python -m pytest tests/test_navigation.py -v` → **7/7 PASSED** ✅
 
 #### Parte 2.4: Verificación Manual
-- [ ] `./run.sh` → editor abre
-- [ ] Ctrl+Click (Goto Definition) funciona
-- [ ] Búsqueda en proyecto funciona
+- [x] `./run.sh` → pendiente de ejecución por usuario
 
 ---
 

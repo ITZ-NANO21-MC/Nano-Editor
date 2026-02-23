@@ -1,6 +1,6 @@
 import tkinter
 import customtkinter
-from ai_completion import completion_engine
+from ai.completion import completion_engine
 from logger import logger
 
 class GhostTextManager:

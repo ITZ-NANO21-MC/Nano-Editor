@@ -2,9 +2,9 @@ import threading
 from typing import Callable, Optional
 from config import config
 from logger import logger
-from ai_utils import process_ai_code_output
-from ai_client import AIClient
-import ai_prompts
+from ai.utils import process_ai_code_output
+from ai.client import AIClient
+import ai.prompts as ai_prompts
 
 
 class AIAssistant:
