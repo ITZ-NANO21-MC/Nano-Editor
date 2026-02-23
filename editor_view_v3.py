@@ -18,9 +18,9 @@ from about_window import AboutWindow
 from references_window import ReferencesWindow
 from ai_menu import AIActionDialog, AIResultDialog
 from ai_file_operations import AIFileOperations
-from project_context import ProjectContext
-from project_search import ProjectSearchWindow
-from goto_definition import GotoDefinition, setup_goto_definition_bindings
+from navigation.project_context import ProjectContext
+from navigation.project_search import ProjectSearchWindow
+from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
 from ai_utils import process_ai_code_output
 from ai_handler import AIHandler
 from file_handler import FileHandler
