@@ -5,7 +5,7 @@ from syntax_highlighter import SyntaxHighlighter
 from completion_popup import CompletionPopup
 from async_highlighter import AsyncHighlighter
 from ai.completion import completion_engine
-from ai_completion_popup import AICompletionPopup
+from ui.ai_completion_popup import AICompletionPopup
 from logger import logger
 
 

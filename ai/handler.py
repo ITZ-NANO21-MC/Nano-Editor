@@ -1,6 +1,6 @@
 import os
 from tkinter import messagebox
-from ai_menu import AIActionDialog, AIResultDialog
+from ui.ai_menu import AIActionDialog, AIResultDialog
 from ai.utils import process_ai_code_output, strip_markdown_formatting
 
 class AIHandler:

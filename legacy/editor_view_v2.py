@@ -4,13 +4,13 @@ import tkinter
 from tkinter import filedialog, messagebox
 from tab_manager import TabManager
 from file_tree import FileTree
-from gemini_panel import GeminiPanel
-from gemini_client import GeminiClient
+from ui.gemini_panel import GeminiPanel
+from ui.gemini_client import GeminiClient
 from terminal.panel import TerminalPanel
-from status_bar import StatusBar
+from ui.status_bar import StatusBar
 from find_replace import FindReplaceWindow
 from ai.assistant import AIAssistant
-from ai_menu import AIActionDialog, AIResultDialog
+from ui.ai_menu import AIActionDialog, AIResultDialog
 from ai.file_operations import AIFileOperations
 from navigation.project_search import ProjectSearchWindow
 from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings

@@ -3,20 +3,20 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from tab_manager import TabManager
-from file_tree_vscode import VSCodeFileTree, VSCodeSections
-from sidebar_vscode import VSCodeSidebar, SearchPanel, SourceControlPanel, RunDebugPanel, ExtensionsPanel, SettingsPanel
-from ai_panel_vscode import AIAssistantPanel
-from gemini_panel import GeminiPanel
-from gemini_client import GeminiClient
+from ui.file_tree import VSCodeFileTree, VSCodeSections
+from ui.sidebar import VSCodeSidebar, SearchPanel, SourceControlPanel, RunDebugPanel, ExtensionsPanel, SettingsPanel
+from ui.ai_panel import AIAssistantPanel
+from ui.gemini_panel import GeminiPanel
+from ui.gemini_client import GeminiClient
 from terminal.panel import TerminalPanel
-from agent_panel import AgentPanel
-from status_bar import StatusBar
+from ui.agent_panel import AgentPanel
+from ui.status_bar import StatusBar
 from find_replace import FindReplaceWindow
 from ai.assistant import AIAssistant
-from shortcuts_window import ShortcutsWindow
-from about_window import AboutWindow
-from references_window import ReferencesWindow
-from ai_menu import AIActionDialog, AIResultDialog
+from ui.shortcuts_window import ShortcutsWindow
+from ui.about_window import AboutWindow
+from ui.references_window import ReferencesWindow
+from ui.ai_menu import AIActionDialog, AIResultDialog
 from ai.file_operations import AIFileOperations
 from navigation.project_context import ProjectContext
 from navigation.project_search import ProjectSearchWindow
@@ -24,13 +24,13 @@ from navigation.goto_definition import GotoDefinition, setup_goto_definition_bin
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
 from file_handler import FileHandler
-from menu_bar import ModernMenuBar
+from ui.menu_bar import ModernMenuBar
 import os
 import shlex
 import shutil
 from typing import Optional, Callable
 from logger import logger
-from visual_feedback import VisualFeedback
+from ui.visual_feedback import VisualFeedback
 
 
 class App(ctk.CTk, AIHandler, FileHandler):

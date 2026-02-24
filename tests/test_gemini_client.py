@@ -6,7 +6,7 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from gemini_client import GeminiClient
+from ui.gemini_client import GeminiClient
 
 class TestGeminiClient(unittest.TestCase):
     """Test Gemini client initialization."""

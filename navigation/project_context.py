@@ -7,7 +7,7 @@ para proporcionarla como contexto a las solicitudes del asistente de IA.
 """
 
 from tab_manager import TabManager
-from file_tree_vscode import VSCodeFileTree
+from ui.file_tree import VSCodeFileTree
 from config import config
 import os
 
