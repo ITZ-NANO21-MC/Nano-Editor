@@ -1,13 +1,13 @@
 import customtkinter
 import tkinter
 from tkinter import filedialog, messagebox
-from text_area import CodeEditor
-from line_numbers import LineNumbers
+from core.text_area import CodeEditor
+from core.line_numbers import LineNumbers
 from file_tree import FileTree
 from ui.gemini_panel import GeminiPanel
 from ui.gemini_client import GeminiClient
 from ui.status_bar import StatusBar
-from find_replace import FindReplaceWindow
+from core.find_replace import FindReplaceWindow
 from ai.assistant import AIAssistant
 from ui.ai_menu import create_ai_menu, AIActionDialog, AIResultDialog
 from ai.file_operations import AIFileOperations

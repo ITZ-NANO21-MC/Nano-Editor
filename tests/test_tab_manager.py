@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from tab_manager import EditorTab
+from core.tab_manager import EditorTab
 
 class TestEditorTab(unittest.TestCase):
     """Test EditorTab class."""

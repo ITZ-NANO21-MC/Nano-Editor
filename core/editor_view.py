@@ -2,7 +2,7 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from tab_manager import TabManager
+from core.tab_manager import TabManager
 from ui.file_tree import VSCodeFileTree, VSCodeSections
 from ui.sidebar import VSCodeSidebar, SearchPanel, SourceControlPanel, RunDebugPanel, ExtensionsPanel, SettingsPanel
 from ui.ai_panel import AIAssistantPanel
@@ -11,7 +11,7 @@ from ui.gemini_client import GeminiClient
 from terminal.panel import TerminalPanel
 from ui.agent_panel import AgentPanel
 from ui.status_bar import StatusBar
-from find_replace import FindReplaceWindow
+from core.find_replace import FindReplaceWindow
 from ai.assistant import AIAssistant
 from ui.shortcuts_window import ShortcutsWindow
 from ui.about_window import AboutWindow
@@ -23,7 +23,7 @@ from navigation.project_search import ProjectSearchWindow
 from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
-from file_handler import FileHandler
+from core.file_handler import FileHandler
 from ui.menu_bar import ModernMenuBar
 import os
 import shlex

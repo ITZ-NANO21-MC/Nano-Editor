@@ -1,8 +1,8 @@
 """Tab management system for multiple file editing."""
 import customtkinter
 import tkinter
-from text_area import CodeEditor
-from line_numbers import LineNumbers
+from core.text_area import CodeEditor
+from core.line_numbers import LineNumbers
 from typing import Optional
 from event_bus import event_bus, Events
 

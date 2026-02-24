@@ -1,9 +1,9 @@
 import customtkinter
 import tkinter
 import jedi
-from syntax_highlighter import SyntaxHighlighter
-from completion_popup import CompletionPopup
-from async_highlighter import AsyncHighlighter
+from core.syntax_highlighter import SyntaxHighlighter
+from core.completion_popup import CompletionPopup
+from core.async_highlighter import AsyncHighlighter
 from ai.completion import completion_engine
 from ui.ai_completion_popup import AICompletionPopup
 from logger import logger

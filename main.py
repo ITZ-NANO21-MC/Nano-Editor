@@ -2,6 +2,6 @@
 """NanoEditor v3.0 - Main Entry Point"""
 
 if __name__ == "__main__":
-    from editor_view_v3 import App
+    from core.editor_view import App
     app = App()
     app.mainloop()

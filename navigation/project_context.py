@@ -6,7 +6,7 @@ como la estructura de archivos y el contenido de las pestañas abiertas,
 para proporcionarla como contexto a las solicitudes del asistente de IA.
 """
 
-from tab_manager import TabManager
+from core.tab_manager import TabManager
 from ui.file_tree import VSCodeFileTree
 from config import config
 import os
