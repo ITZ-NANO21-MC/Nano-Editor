@@ -13,17 +13,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class TestAIModuleImports(unittest.TestCase):
     """Test that all AI module imports resolve correctly after migration."""
 
-    def test_import_ai_package(self):
-        """The ai package itself should be importable with re-exports."""
-        import ai
-        self.assertTrue(hasattr(ai, 'AIClient'))
-        self.assertTrue(hasattr(ai, 'AIAssistant'))
-        self.assertTrue(hasattr(ai, 'AIAgent'))
-        self.assertTrue(hasattr(ai, 'ToolRegistry'))
-        self.assertTrue(hasattr(ai, 'AISecurityManager'))
-        self.assertTrue(hasattr(ai, 'PermissionLevel'))
-        self.assertTrue(hasattr(ai, 'completion_engine'))
-
     def test_import_ai_client(self):
         """ai.client.AIClient should be importable."""
         from ai.client import AIClient

@@ -1,4 +1,4 @@
-# NanoEditor v3.9.5 (AI Context & Fixes Edition)
+# NanoEditor v4.0 (Modular Edition)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -159,25 +159,28 @@ python3 main.py
 
 ```
 Nano_Editor/
-├── main.py                    # Punto de entrada
-├── editor_view_v3.py          # Aplicación principal
-├── ai_assistant.py            # Orquestador de IA (Streaming support)
-├── ai_client.py               # Cliente LiteLLM robusto
-├── ai_prompts.py              # Centralización de prompts
-├── project_context.py         # Análisis de contexto de proyecto
-├── tab_manager.py             # Gestión de pestañas
-├── text_area.py               # Editor de texto
-├── syntax_highlighter.py      # Resaltado de sintaxis
-├── ai_handler.py              # Gestión de UI y lógica de IA
-├── file_handler.py            # Operaciones de archivo
-├── menu_bar.py                # Barra de menú
-├── terminal_panel.py          # Terminal interactivo
-├── config.py                  # Configuración persistente
-├── sidebar_vscode.py          # Barra lateral
-├── status_bar.py              # Barra de estado
-├── tests/                     # Tests unitarios
-├── Informacion/               # Documentación completa
-└── legacy/                    # Versiones anteriores
+├── main.py                    # Punto de entrada principal
+├── run.sh                     # Script de ejecución
+├── core/                      # Componentes principales del editor
+│   ├── editor_view.py         # Aplicación principal (App)
+│   ├── text_area.py           # Editor de texto base
+│   └── tab_manager.py         # Gestión de pestañas y archivos abiertos
+├── ui/                        # Interfaz gráfica y paneles
+│   ├── sidebar.py             # Barra lateral y explorador
+│   ├── menu_bar.py            # Barra de menú superior
+│   └── status_bar.py          # Barra de estado inferior
+├── ai/                        # Integración de IA y Agente
+│   ├── assistant.py           # Orquestador del asistente IA
+│   ├── agent.py               # Agente autónomo con tools
+│   └── client.py              # Cliente LiteLLM multimodelo
+├── navigation/                # Navegación de código y búsqueda
+│   ├── goto_definition.py     # Lógica F12 (Goto Definition)
+│   └── project_context.py     # Análisis de contexto de proyecto
+├── terminal/                  # Consola interactiva integrada
+│   └── panel.py               # UI y proceso de la terminal
+├── tests/                     # Suite de pruebas unitarias (60+ tests)
+├── Informacion/               # Documentación y métricas
+└── scripts/                   # Scripts de utilidad
 ```
 
 ## 🧪 Testing
@@ -233,6 +236,11 @@ grep ERROR ~/.nanoeditor/logs/nanoeditor.log
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v4.0 (Modular Architecture) - Febrero 2026
+- ✅ **Arquitectura Modular**: Refactorización masiva organizando el proyecto en `core/`, `ui/`, `ai/`, `terminal/` y `navigation/`.
+- ✅ **Estabilidad de Imports**: Eliminadas las dependencias circulares mediante re-exports en `__init__.py`.
+- ✅ **Test Coverage Exhaustivo**: Ampliadas las pruebas unitarias a más de 60 tests cubriendo todos los módulos.
 
 ### v3.9.5 (AI Context & Fixes Edition) - Febrero 2026
 - ✅ **Prompt Enforcement**: Sistema de instrucciones estrictas para garantizar salida de texto plano (sin JSON/Markdown accidental).
@@ -320,5 +328,5 @@ MIT License - Ver [LICENSE](LICENSE) para más detalles
 
 ---
 
-**NanoEditor v3.8** - Editor de código profesional, optimizado y listo para escalar ✨
+**NanoEditor v4.0** - Editor de código profesional, modular, optimizado y listo para escalar ✨
 

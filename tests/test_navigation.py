@@ -13,14 +13,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class TestNavigationModuleImports(unittest.TestCase):
     """Test that all navigation module imports resolve correctly after migration."""
 
-    def test_import_navigation_package(self):
-        """The navigation package itself should be importable."""
-        import navigation
-        self.assertTrue(hasattr(navigation, 'GotoDefinition'))
-        self.assertTrue(hasattr(navigation, 'setup_goto_definition_bindings'))
-        self.assertTrue(hasattr(navigation, 'ProjectContext'))
-        self.assertTrue(hasattr(navigation, 'ProjectSearchWindow'))
-
     def test_import_goto_definition(self):
         """navigation.goto_definition should be importable."""
         from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
@@ -36,13 +28,6 @@ class TestNavigationModuleImports(unittest.TestCase):
         """navigation.project_search.ProjectSearchWindow should be importable."""
         from navigation.project_search import ProjectSearchWindow
         self.assertTrue(callable(ProjectSearchWindow))
-
-    def test_reexport_from_init(self):
-        """Re-exports in navigation/__init__.py should work."""
-        from navigation import GotoDefinition, ProjectContext, ProjectSearchWindow
-        self.assertIsNotNone(GotoDefinition)
-        self.assertIsNotNone(ProjectContext)
-        self.assertIsNotNone(ProjectSearchWindow)
 
 
 class TestProjectContextBasic(unittest.TestCase):

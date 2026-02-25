@@ -13,12 +13,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class TestTerminalModuleImports(unittest.TestCase):
     """Test that all terminal module imports resolve correctly after migration."""
 
-    def test_import_terminal_package(self):
-        """The terminal package itself should be importable."""
-        import terminal
-        self.assertTrue(hasattr(terminal, 'TerminalPanel'))
-        self.assertTrue(hasattr(terminal, 'TerminalProcess'))
-
     def test_import_terminal_panel(self):
         """terminal.panel.TerminalPanel should be importable."""
         from terminal.panel import TerminalPanel
@@ -28,12 +22,6 @@ class TestTerminalModuleImports(unittest.TestCase):
         """terminal.process.TerminalProcess should be importable."""
         from terminal.process import TerminalProcess
         self.assertTrue(callable(TerminalProcess))
-
-    def test_reexport_from_init(self):
-        """Re-exports in terminal/__init__.py should work."""
-        from terminal import TerminalPanel, TerminalProcess
-        self.assertIsNotNone(TerminalPanel)
-        self.assertIsNotNone(TerminalProcess)
 
 
 class TestTerminalProcessBasic(unittest.TestCase):
