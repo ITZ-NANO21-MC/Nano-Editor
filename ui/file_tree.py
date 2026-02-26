@@ -211,7 +211,8 @@ class VSCodeFileTree(ctk.CTkFrame):
         self.project_btn.configure(text=f"▼ {project_name}")
         
         self._populate_tree("", path)
-    
+        event_bus.emit(Events.FOLDER_OPENED, path)
+        
     
     
     def on_open(self, event: tk.Event) -> None:

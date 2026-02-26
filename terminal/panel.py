@@ -12,7 +12,7 @@ import queue
 import time
 from typing import Optional, List, Dict, Tuple
 from pathlib import Path
-
+from event_bus import event_bus, Events
 
 class TerminalPanel(ctk.CTkFrame):
     """Advanced integrated terminal with shell-like features."""
@@ -64,8 +64,15 @@ class TerminalPanel(ctk.CTkFrame):
         # Start output processor
         self._start_output_processor()
         
+        # Subscribe to workspace changes
+        event_bus.subscribe(Events.FOLDER_OPENED, self._on_workspace_changed)
+        
         # Write welcome message
         self._write_welcome()
+        
+    def _on_workspace_changed(self, path: str):
+        """Update terminal working directory when workspace changes."""
+        self.set_working_directory(path)
     
     def _detect_default_shell(self) -> str:
         """Detect the default shell for the system."""
