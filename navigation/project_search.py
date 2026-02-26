@@ -78,6 +78,7 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
         )
         self.results_text.grid(row=0, column=0, sticky="nsew")
         self.results_text.bind("<Double-Button-1>", self.on_result_click)
+        self.results_text.configure(state="disabled")
         
         # Status
         self.status_label = customtkinter.CTkLabel(
@@ -108,7 +109,9 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
             return
         
         self.search_btn.configure(state="disabled", text="Searching...")
+        self.results_text.configure(state="normal")
         self.results_text.delete("1.0", "end")
+        self.results_text.configure(state="disabled")
         self.status_label.configure(text="Searching...")
         
         def search_thread():
@@ -184,10 +187,12 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
     def display_results(self, results, query):
         """Display search results."""
         self.search_btn.configure(state="normal", text="Search")
+        self.results_text.configure(state="normal")
         
         if not results:
             self.results_text.insert("1.0", f"No results found for '{query}'")
             self.status_label.configure(text="No results found")
+            self.results_text.configure(state="disabled")
             return
         
         self.status_label.configure(text=f"Found {len(results)} results")
@@ -199,6 +204,7 @@ class ProjectSearchWindow(customtkinter.CTkToplevel):
         
         # Configure tag for clickable file paths
         self.results_text.tag_config("file", foreground="#4A9EFF", underline=True)
+        self.results_text.configure(state="disabled")
     
     def on_result_click(self, event):
         """Handle click on search result."""
