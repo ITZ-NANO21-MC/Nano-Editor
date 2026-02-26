@@ -48,6 +48,34 @@ class CodeEditor(customtkinter.CTkTextbox):
         from ai.ghost_text import GhostTextManager
         self.ghost_manager = GhostTextManager(self)
         
+        # Interceptar yscrollcommand del underlying widget para sincronización perfecta
+        self.after(100, self._intercept_yscroll)
+        
+    def _intercept_yscroll(self):
+        """Intercept the textbox's yscrollcommand to catch ALL scrolling events (keyboard, dragging, mousewheel)."""
+        try:
+            original_yscroll = self._textbox.cget("yscrollcommand")
+            
+            def _yscroll(*args):
+                if original_yscroll:
+                    if isinstance(original_yscroll, str):
+                        self.tk.call(original_yscroll, *args)
+                    else:
+                        original_yscroll(*args)
+                # Sincronizar números de línea inmediatamente
+                if self.line_numbers:
+                    self.line_numbers.redraw()
+                    
+            self._textbox.configure(yscrollcommand=_yscroll)
+            
+            # Asegurar que arrastrar el scrollbar redibuje también
+            if hasattr(self, '_scrollbar') and self._scrollbar:
+                self._scrollbar.configure(command=self.yview)
+                
+        except Exception as e:
+            logger.error(f"Error in _intercept_yscroll: {e}")
+
+        
     def _configure_scrollbar_sync(self):
         """Configure the internal scrollbar to sync with line numbers."""
         # CTkTextbox tiene un atributo _scrollbar interno
@@ -108,14 +136,8 @@ class CodeEditor(customtkinter.CTkTextbox):
         """Sync line numbers position with text widget."""
         if self.line_numbers:
             try:
-                # Obtener la vista vertical del widget de texto (interno)
-                # CTkTextbox.yview() devuelve (start, end)
-                y_pos = self.yview()
-                if y_pos:
-                    # Mover los números de línea a la misma posición fraccional
-                    self.line_numbers.yview_moveto(y_pos[0])
-                    # Forzar redibujado
-                    self.line_numbers.redraw()
+                # Force redraw which places numbers at correct visible coordinates
+                self.line_numbers.redraw()
             except tkinter.TclError:
                 pass
 
@@ -323,17 +345,7 @@ class CodeEditor(customtkinter.CTkTextbox):
             
             # Sincronizar números de línea DINÁMICAMENTE
             if self.line_numbers and args:
-                # Calcular posición actual para sincronización precisa
-                if len(args) >= 2 and args[0] == 'moveto':
-                    # Movimiento absoluto
-                    self.line_numbers.yview_moveto(args[1])
-                elif len(args) >= 2 and args[0] == 'scroll':
-                    # Desplazamiento relativo
-                    units = int(args[1])
-                    what = args[2] if len(args) > 2 else "units"
-                    self.line_numbers.yview_scroll(units, what)
-                
-                # Forzar redibujado inmediato
+                # Forzar redibujado inmediato utilizando las coordenadas dline
                 self.line_numbers.redraw()
             
             return result
