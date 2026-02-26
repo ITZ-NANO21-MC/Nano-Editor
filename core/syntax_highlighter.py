@@ -132,7 +132,7 @@ class SyntaxHighlighter:
         """Elimina todas las etiquetas de resaltado."""
         try:
             for tag in self.text_widget.tag_names():
-                if tag not in ['sel']:  # No eliminar selección
+                if tag not in ['sel', 'ghost']:  # No eliminar selección ni texto fantasma
                     self.text_widget.tag_remove(tag, "1.0", "end")
         except tkinter.TclError:
             pass

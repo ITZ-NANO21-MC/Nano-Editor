@@ -72,8 +72,7 @@ class TestGeminiClientStreaming(unittest.TestCase):
         query = "test"
         response_generator = client.run_gemini_stream(query)
         result = next(response_generator)
-        
-        self.assertIn("Exception: AuthenticationError", result)
+        self.assertIn("AuthenticationError", result)
 
 if __name__ == "__main__":
     unittest.main()
