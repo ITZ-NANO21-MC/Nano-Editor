@@ -4,12 +4,15 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from core.tab_manager import TabManager
 from ui.file_tree import VSCodeFileTree, VSCodeSections
-from ui.sidebar import VSCodeSidebar, SearchPanel, SourceControlPanel, RunDebugPanel, ExtensionsPanel, SettingsPanel
+from ui.sidebar import VSCodeSidebar, SearchPanel, ExtensionsPanel, SettingsPanel
+from ui.git_panel import GitPanel
 from ui.ai_panel import AIAssistantPanel
 from ui.gemini_panel import GeminiPanel
 from ui.gemini_client import GeminiClient
 from terminal.panel import TerminalPanel
 from ui.agent_panel import AgentPanel
+from ui.debug_panel import DebugPanel
+from core.debugger.execution_controller import ExecutionController
 from ui.status_bar import StatusBar
 from core.find_replace import FindReplaceWindow
 from ai.assistant import AIAssistant
@@ -21,6 +24,8 @@ from ai.file_operations import AIFileOperations
 from navigation.project_context import ProjectContext
 from navigation.project_search import ProjectSearchWindow
 from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
+from ui.rename_dialog import RenameDialog
+from core.refactoring.extractor import Extractor
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
 from core.file_handler import FileHandler
@@ -107,8 +112,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.sections.grid(row=1, column=0, sticky="ew")
         
         self.search_panel = SearchPanel(self.panel_container, self)
-        self.source_panel = SourceControlPanel(self.panel_container)
-        self.run_panel = RunDebugPanel(self.panel_container, self)
+        self.source_panel = GitPanel(self.panel_container, self)
+        self.debug_panel_view = DebugPanel(self.panel_container, self)
+        self.run_panel = self.debug_panel_view  # Alias for backward compatibility
         self.ai_panel = AIAssistantPanel(self.panel_container, self)
         self.extensions_panel = ExtensionsPanel(self.panel_container)
         self.settings_panel = SettingsPanel(self.panel_container, self)
@@ -142,6 +148,17 @@ class App(ctk.CTk, AIHandler, FileHandler):
         # Status bar
         self.status_bar = StatusBar(main)
         self.status_bar.pack(fill="x", side="bottom")
+        
+        # Wire breakpoint manager to line numbers
+        if hasattr(self.tab_manager, 'line_numbers') and self.tab_manager.line_numbers:
+            self.debug_panel_view.connect_line_numbers(self.tab_manager.line_numbers)
+        
+        # Setup execution controller
+        self._exec_controller = ExecutionController(
+            on_output=self._on_debug_output,
+            on_finished=self._on_debug_finished
+        )
+        self.debug_panel_view.exec_controller = self._exec_controller
 
     def _init_components(self):
         """Initialize logic components."""
@@ -188,6 +205,10 @@ class App(ctk.CTk, AIHandler, FileHandler):
         self.bind("<Control-Shift-X>", lambda e: self.show_extensions())
         self.bind("<Control-comma>", lambda e: self.show_settings())
         self.bind("<Control-Shift-Z>", lambda e: self.show_agent()) # New shortcut for Agent
+        
+        # Refactoring bindings
+        self.tab_manager.text_area.bind("<F2>", lambda e: self.show_rename_dialog())
+        self.tab_manager.text_area.bind("<Control-E>", lambda e: self.extract_method())
 
         # Bind editing shortcuts directly to text_area to prevent bubbling
         self.tab_manager.text_area.bind("<Control-a>", lambda e: self.select_all())
@@ -412,6 +433,85 @@ class App(ctk.CTk, AIHandler, FileHandler):
         else:
             logger.warning(f"No runner for: {ext}")
             messagebox.showinfo("Run", f"No runner for {ext}")
+
+    def _on_debug_output(self, line: str):
+        """Callback from ExecutionController: forward pdb output to debug panel."""
+        try:
+            if hasattr(self, 'debug_panel_view'):
+                self.after(0, lambda: self.debug_panel_view.append_output(line))
+        except Exception:
+            pass
+
+    def show_rename_dialog(self):
+        """Trigger rename symbol dialog."""
+        text_area = self.tab_manager.text_area
+        if not text_area: return
+        file_path = self.tab_manager.get_current_tab().file_path or "untitled.py"
+        
+        # Determine position
+        idx = text_area.index("insert")
+        line, col = map(int, idx.split('.'))
+        code = text_area.get("1.0", "end-1c")
+        
+        # Basic word extraction around cursor
+        word_start = text_area.index(f"{idx} wordstart")
+        word_end = text_area.index(f"{idx} wordend")
+        current_word = text_area.get(word_start, word_end).strip()
+        
+        if not current_word or not current_word.isidentifier():
+            from tkinter import messagebox
+            messagebox.showinfo("Rename", "Cursor must be on a valid symbol/identifier.")
+            return
+            
+        RenameDialog(self, self, current_word, code, line, col, file_path)
+
+    def extract_method(self):
+        """Trigger extract method functionality."""
+        text_area = self.tab_manager.text_area
+        if not text_area: return
+        try:
+            sel_first = text_area.index("sel.first")
+            sel_last = text_area.index("sel.last")
+            start_line = int(sel_first.split('.')[0])
+            end_line = int(sel_last.split('.')[0])
+            if sel_last.split('.')[1] == '0' and end_line > start_line:
+                end_line -= 1
+        except Exception:
+            from tkinter import messagebox
+            messagebox.showinfo("Extract Method", "Please select lines to extract.")
+            return
+
+        code = text_area.get("1.0", "end-1c")
+        extractor = Extractor()
+        
+        from tkinter import simpledialog, messagebox
+        func_name = simpledialog.askstring("Extract Method", "New function name:", initialvalue="extracted_function")
+        if not func_name: return
+        
+        result = extractor.extract_method(code, start_line, end_line, func_name)
+        if not result:
+            messagebox.showerror("Extract Method", "Failed to extract method.")
+            return
+            
+        # Apply changes
+        text_area.delete(f"{start_line}.0", f"{end_line}.end")
+        text_area.insert(f"{start_line}.0", result.call_statement)
+        
+        # Insert function def at top or before context (simplistic placement for now: at top)
+        # Better: above the current class/method, but top is safest.
+        text_area.insert("1.0", result.function_def + "\n\n")
+        
+        if hasattr(self.app, 'feedback'):
+            self.app.feedback.show_success(f"Method {func_name} extracted")
+
+    def _on_debug_finished(self):
+        """Callback when debug session ends."""
+        try:
+            self.after(0, lambda: self.debug_panel_view._set_debug_buttons(False))
+            if hasattr(self, 'feedback'):
+                self.after(0, lambda: self.feedback.show_info("Debug session ended"))
+        except Exception:
+            pass
 
     def show_about(self):
         AboutWindow(self)

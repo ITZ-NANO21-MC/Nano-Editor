@@ -373,14 +373,14 @@ fs = container.resolve(IFileSystem)
 - [ ] JavaScript debugger
 
 #### Semana 7: Git Integration
-- [ ] Git status viewer
-- [ ] Commit/Push/Pull
+- [x] Git status viewer (Core Logic)
+- [x] Commit/Push/Pull (UI Form)
 - [ ] Branch management
-- [ ] Diff viewer
+- [x] Diff viewer
 
 #### Semana 8: Refactoring
-- [ ] Rename symbol
-- [ ] Extract method
+- [x] Rename symbol
+- [x] Extract method
 - [ ] Extract variable
 - [ ] Move to file
 

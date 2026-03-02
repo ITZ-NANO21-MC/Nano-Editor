@@ -208,57 +208,7 @@ class SearchPanel(ctk.CTkFrame):
         self.app.open_project_search(options)
 
 
-class SourceControlPanel(ctk.CTkFrame):
-    """Source control panel."""
-    def __init__(self, master):
-        super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
-        
-        header = ctk.CTkFrame(self, height=35, fg_color=("#E8E8E8", "#2D2D2D"), corner_radius=0)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        
-        ctk.CTkLabel(
-            header, text="SOURCE CONTROL",
-            font=("Segoe UI", 11, "bold"),
-            text_color=("#383838", "#CCCCCC")
-        ).pack(side="left", padx=10, pady=8)
-        
-        ctk.CTkLabel(
-            self, text="Git integration coming soon...",
-            font=("Segoe UI", 10),
-            text_color=("#666666", "#999999")
-        ).pack(pady=20)
 
-
-class RunDebugPanel(ctk.CTkFrame):
-    """Run and debug panel."""
-    def __init__(self, master, app):
-        super().__init__(master, fg_color=("#F3F3F3", "#252526"), corner_radius=0)
-        self.app = app
-        
-        header = ctk.CTkFrame(self, height=35, fg_color=("#E8E8E8", "#2D2D2D"), corner_radius=0)
-        header.pack(fill="x")
-        header.pack_propagate(False)
-        
-        ctk.CTkLabel(
-            header, text="RUN AND DEBUG",
-            font=("Segoe UI", 11, "bold"),
-            text_color=("#383838", "#CCCCCC")
-        ).pack(side="left", padx=10, pady=8)
-        
-        # Run button
-        ctk.CTkButton(
-            self, text="▶ Run Current File",
-            command=app.run_current_file,
-            height=35, font=("Segoe UI", 11),
-            fg_color=("#007ACC", "#007ACC")
-        ).pack(fill="x", padx=10, pady=10)
-        
-        ctk.CTkLabel(
-            self, text="Debugging features coming soon...",
-            font=("Segoe UI", 10),
-            text_color=("#666666", "#999999")
-        ).pack(pady=10)
 
 
 class ExtensionsPanel(ctk.CTkFrame):

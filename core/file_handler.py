@@ -30,6 +30,11 @@ class FileHandler:
                 self.current_file = file_path
                 self.status_bar.set_file_path(file_path)
                 
+                # Update line numbers with current file for breakpoint tracking
+                if hasattr(self, 'tab_manager') and hasattr(self.tab_manager, 'line_numbers'):
+                    if self.tab_manager.line_numbers:
+                        self.tab_manager.line_numbers.set_current_file(file_path)
+                
                 # Sync file tree if opened file is in a different directory
                 file_dir = os.path.dirname(file_path)
                 if hasattr(self, 'file_tree') and self.file_tree:

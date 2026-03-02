@@ -225,6 +225,10 @@ class TabManager(customtkinter.CTkFrame):
         self.text_area.file_path = tab.file_path
         if tab.file_path:
             self.text_area.highlight_text()
+        
+        # Update line numbers with current file for breakpoint tracking
+        if hasattr(self, 'line_numbers') and self.line_numbers and tab.file_path:
+            self.line_numbers.set_current_file(tab.file_path)
     
     def _update_tab_indices(self) -> None:
         """Update tab indices in tab buttons."""

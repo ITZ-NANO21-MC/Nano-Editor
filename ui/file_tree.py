@@ -210,8 +210,13 @@ class VSCodeFileTree(ctk.CTkFrame):
         project_name = os.path.basename(path) or path
         self.project_btn.configure(text=f"▼ {project_name}")
         
+        
         self._populate_tree("", path)
         event_bus.emit(Events.FOLDER_OPENED, path)
+        
+        # BUG-5 Fix: Sync Git repo path
+        if hasattr(self, 'app') and hasattr(self.app, 'source_panel'):
+            self.app.source_panel.update_repo_path(path)
         
     
     
