@@ -58,6 +58,7 @@ class NanoEditorPlugin:
 ```
 
 #### 2. Debugging Integrado
+**Estado:** ✅ COMPLETADO (Parcialmente: Python pdb & Console)
 **Prioridad:** ALTA
 **Complejidad:** Alta
 **Tiempo:** 3-4 semanas
@@ -87,6 +88,7 @@ class Debugger:
 ```
 
 #### 3. Git Integration Completo
+**Estado:** ✅ COMPLETADO
 **Prioridad:** ALTA
 **Complejidad:** Media
 **Tiempo:** 2-3 semanas
@@ -141,6 +143,7 @@ class CollaborationManager:
 ```
 
 #### 5. Refactoring Avanzado
+**Estado:** 🚧 EN PROGRESO (Rename Symbol y Extract Method completados)
 **Prioridad:** MEDIA
 **Complejidad:** Alta
 **Tiempo:** 2-3 semanas
@@ -361,21 +364,21 @@ fs = container.resolve(IFileSystem)
 **Semanas 5-8**
 
 #### Semana 5: Debugging (Parte 1)
-- [ ] Breakpoint manager
-- [ ] Debug session controller
-- [ ] UI de debugging
-- [ ] Python debugger integration
+- [x] Breakpoint manager
+- [x] Debug session controller
+- [x] UI de debugging
+- [x] Python debugger integration
 
 #### Semana 6: Debugging (Parte 2)
 - [ ] Variable inspector
 - [ ] Call stack viewer
-- [ ] Debug console
+- [x] Debug console
 - [ ] JavaScript debugger
 
 #### Semana 7: Git Integration
 - [x] Git status viewer (Core Logic)
 - [x] Commit/Push/Pull (UI Form)
-- [ ] Branch management
+- [x] Branch management
 - [x] Diff viewer
 
 #### Semana 8: Refactoring
