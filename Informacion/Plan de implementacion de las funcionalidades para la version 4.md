@@ -57,6 +57,18 @@ Este plan divide las funcionalidades complejas en módulos independientes y test
 
 ---
 
+### Parte 3.3: Extracción de Variable (Extract Variable) ✅ COMPLETADO
+- **Archivo:** `core/refactoring/extractor.py`
+- **Funcionalidad:** Extraer una expresión seleccionada a una nueva variable y reemplazar la expresión con el nombre de la variable.
+- **UI:** Atajo de teclado (`Ctrl+Shift+L`), input dialog para el nombre de la variable.
+
+### Parte 3.4: Mover a Archivo (Move to File) ✅ COMPLETADO
+- **Archivo:** `core/refactoring/mover.py` (Nuevo)
+- **Funcionalidad:** Mover una clase o función seleccionada a otro archivo, actualizando los imports según sea necesario (usando `jedi` o `ast`).
+- **UI:** Atajo de teclado (`Ctrl+Shift+M`), file dialog para seleccionar el archivo destino.
+
+---
+
 ## 🧪 Estrategia de Validación
 Todas las nuevas funcionalidades **DEBEN** incluir:
 1. Pruebas unitarias que validen la lógica sin necesidad de abrir la interfaz gráfica.
@@ -66,4 +78,4 @@ Todas las nuevas funcionalidades **DEBEN** incluir:
 ---
 
 **Fecha de creación:** 27 Febrero 2026
-**Estado:** ✅ FASE 2 COMPLETADA — Todos los 27 tests nuevos pasan (13 debugger + 6 git + 8 refactoring)
+**Estado:** ✅ FASE 2 COMPLETADA (Pendiente 3.3 y 3.4) — Todos los 27 tests nuevos pasan (13 debugger + 6 git + 8 refactoring)

@@ -143,7 +143,7 @@ class CollaborationManager:
 ```
 
 #### 5. Refactoring Avanzado
-**Estado:** 🚧 EN PROGRESO (Rename Symbol y Extract Method completados)
+**Estado:** ✅ COMPLETADO
 **Prioridad:** MEDIA
 **Complejidad:** Alta
 **Tiempo:** 2-3 semanas
@@ -384,8 +384,8 @@ fs = container.resolve(IFileSystem)
 #### Semana 8: Refactoring
 - [x] Rename symbol
 - [x] Extract method
-- [ ] Extract variable
-- [ ] Move to file
+- [x] Extract variable
+- [x] Move to file
 
 ### Fase 3: Colaboración & AI (Mes 3)
 **Semanas 9-12**

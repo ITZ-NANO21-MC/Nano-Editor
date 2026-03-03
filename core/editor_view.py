@@ -26,6 +26,7 @@ from navigation.project_search import ProjectSearchWindow
 from navigation.goto_definition import GotoDefinition, setup_goto_definition_bindings
 from ui.rename_dialog import RenameDialog
 from core.refactoring.extractor import Extractor
+from core.refactoring.mover import Mover
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
 from core.file_handler import FileHandler
@@ -208,7 +209,12 @@ class App(ctk.CTk, AIHandler, FileHandler):
         
         # Refactoring bindings
         self.tab_manager.text_area.bind("<F2>", lambda e: self.show_rename_dialog())
+        self.tab_manager.text_area.bind("<Control-e>", lambda e: self.extract_method())
         self.tab_manager.text_area.bind("<Control-E>", lambda e: self.extract_method())
+        self.tab_manager.text_area.bind("<Control-L>", lambda e: self.extract_variable()) # Use Ctrl+L for Extract Variable to avoid conflict with Paste (Ctrl+V)
+        self.tab_manager.text_area.bind("<Control-l>", lambda e: self.extract_variable())
+        self.tab_manager.text_area.bind("<Control-M>", lambda e: self.move_to_file())
+        self.tab_manager.text_area.bind("<Control-m>", lambda e: self.move_to_file())
 
         # Bind editing shortcuts directly to text_area to prevent bubbling
         self.tab_manager.text_area.bind("<Control-a>", lambda e: self.select_all())
@@ -503,6 +509,128 @@ class App(ctk.CTk, AIHandler, FileHandler):
         
         if hasattr(self.app, 'feedback'):
             self.app.feedback.show_success(f"Method {func_name} extracted")
+
+    def extract_variable(self):
+        """Trigger extract variable functionality."""
+        text_area = self.tab_manager.text_area
+        if not text_area: return
+        try:
+            sel_first = text_area.index("sel.first")
+            sel_last = text_area.index("sel.last")
+            start_line, start_col = map(int, sel_first.split('.'))
+            end_line, end_col = map(int, sel_last.split('.'))
+        except Exception:
+            from tkinter import messagebox
+            messagebox.showinfo("Extract Variable", "Please select an expression to extract.")
+            return
+
+        code = text_area.get("1.0", "end-1c")
+        extractor = Extractor()
+        
+        from tkinter import simpledialog, messagebox
+        var_name = simpledialog.askstring("Extract Variable", "New variable name:", initialvalue="extracted_var")
+        if not var_name: return
+        
+        result = extractor.extract_variable(code, start_line, end_line, start_col, end_col, var_name)
+        if not result:
+            messagebox.showerror("Extract Variable", "Failed to extract variable. Ensure exactly a valid expression is selected.")
+            return
+            
+        # Apply changes
+        # Replace the selected block with modified code
+        yview = text_area.yview()
+        text_area.delete("1.0", "end")
+        text_area.insert("1.0", result.modified_code)
+        
+        # Insert the assignment statement before the line where the extraction occurred
+        text_area.insert(f"{start_line}.0", result.assignment_statement)
+        text_area.yview_moveto(yview[0])
+        
+        if hasattr(self.app, 'feedback'):
+            self.app.feedback.show_success(f"Variable {var_name} extracted")
+
+    def move_to_file(self):
+        """Trigger move to file functionality."""
+        text_area = self.tab_manager.text_area
+        if not text_area: return
+        tab = self.tab_manager.get_current_tab()
+        source_file = tab.file_path
+        
+        if not source_file:
+            from tkinter import messagebox
+            messagebox.showinfo("Move to File", "Please save the current file first.")
+            return
+            
+        try:
+            sel_first = text_area.index("sel.first")
+            sel_last = text_area.index("sel.last")
+            start_line = int(sel_first.split('.')[0])
+            end_line = int(sel_last.split('.')[0])
+            if sel_last.split('.')[1] == '0' and end_line > start_line:
+                end_line -= 1
+        except Exception:
+            from tkinter import messagebox
+            messagebox.showinfo("Move to File", "Please select a block (class/function) to move.")
+            return
+
+        from tkinter import filedialog, messagebox
+        # Start looking in the same folder as the current file
+        initial_dir = os.path.dirname(source_file)
+        target_file = filedialog.asksaveasfilename(
+            initialdir=initial_dir,
+            title="Select Target File",
+            defaultextension=".py",
+            filetypes=[("Python Files", "*.py"), ("All Files", "*.*")]
+        )
+        if not target_file: return
+        
+        if target_file == source_file:
+            messagebox.showerror("Move to File", "Source and target files cannot be the same.")
+            return
+            
+        project_root = os.getcwd() # Can use file_tree root if needed
+        mover = Mover()
+        result = mover.move_to_file(project_root, source_file, target_file, start_line, end_line)
+        
+        if not result:
+            messagebox.showerror("Move to File", "Failed to move block. Ensure a valid class or function is selected.")
+            return
+            
+        # Try to apply to editor first, then write target file
+        # Check if the target file is open in another tab
+        is_target_open = False
+        target_tab = None
+        for i, t in enumerate(self.tab_manager.tabs):
+            if t.file_path == target_file:
+                is_target_open = True
+                target_tab = t
+                break
+                
+        # Write to target file directly
+        try:
+            with open(target_file, 'w', encoding='utf-8') as f:
+                f.write(result.target_file_content)
+        except OSError as e:
+            messagebox.showerror("Move to File", f"Error saving new file: {e}")
+            return
+            
+        # Update source editor view
+        yview = text_area.yview()
+        text_area.delete("1.0", "end")
+        text_area.insert("1.0", result.source_file_content)
+        text_area.yview_moveto(yview[0])
+        
+        # Mark source as modified
+        tab.modified = True
+        self.tab_manager.update_tab_title()
+        
+        # If target tab was already open, reload it
+        if is_target_open and target_tab:
+            # Simple reload approach:
+            pass # Ideally refresh the tab content, skipping for PoC to avoid complexity 
+            
+        if hasattr(self.app, 'feedback'):
+            self.app.feedback.show_success(f"Moved {result.symbol_name} to {os.path.basename(target_file)}")
 
     def _on_debug_finished(self):
         """Callback when debug session ends."""

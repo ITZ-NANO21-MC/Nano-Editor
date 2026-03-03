@@ -16,8 +16,16 @@ class ExtractionResult:
         self.function_name: str = ""
         self.function_def: str = ""
         self.call_statement: str = ""
-        self.params: list = []
         self.returns: list = []
+
+
+class VariableExtractionResult:
+    """Result of an extract-variable operation."""
+    def __init__(self):
+        self.var_name: str = ""
+        self.assignment_statement: str = ""
+        self.modified_code: str = ""
+
 
 
 class Extractor:
@@ -159,3 +167,48 @@ class Extractor:
             return names
         except SyntaxError:
             return set()
+
+    def extract_variable(self, full_code: str, start_line: int, end_line: int,
+                         start_col: int, end_col: int, var_name: str = "new_var") -> Optional['VariableExtractionResult']:
+        """Extract a selected expression into a new variable."""
+        lines = full_code.splitlines(keepends=True)
+        if start_line < 1 or end_line > len(lines) or start_line > end_line:
+            logger.error(f"Invalid line range: {start_line}-{end_line}")
+            return None
+
+        if start_line == end_line:
+            raw_expression = lines[start_line - 1][start_col:end_col]
+        else:
+            first = lines[start_line - 1][start_col:]
+            mid = "".join(lines[start_line:end_line - 1])
+            last = lines[end_line - 1][:end_col]
+            raw_expression = first + mid + last
+
+        expression = raw_expression.strip()
+        if not expression:
+            return None
+
+        try:
+            ast.parse(expression, mode='eval')
+        except SyntaxError:
+            logger.error(f"Selection '{expression}' is not a valid Python expression.")
+            return None
+
+        target_line = lines[start_line - 1]
+        indent = len(target_line) - len(target_line.lstrip())
+        indent_str = target_line[:indent]
+
+        result = VariableExtractionResult()
+        result.var_name = var_name
+        result.assignment_statement = f"{indent_str}{var_name} = {expression}\n"
+
+        if start_line == end_line:
+            new_line = lines[start_line - 1][:start_col] + var_name + lines[start_line - 1][end_col:]
+            lines[start_line - 1] = new_line
+        else:
+            lines[start_line - 1] = lines[start_line - 1][:start_col] + var_name + lines[end_line - 1][end_col:]
+            for i in range(start_line, end_line):
+                lines[i] = ""
+
+        result.modified_code = "".join(lines)
+        return result

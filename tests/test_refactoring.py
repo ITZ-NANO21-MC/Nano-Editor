@@ -3,7 +3,8 @@ import pytest
 import os
 import tempfile
 from core.refactoring.renamer import Renamer
-from core.refactoring.extractor import Extractor, ExtractionResult
+from core.refactoring.extractor import Extractor, ExtractionResult, VariableExtractionResult
+from core.refactoring.mover import Mover, MoveResult
 
 
 # ── Renamer Tests ──────────────────────────────────────────
@@ -105,3 +106,68 @@ def test_extract_call_statement(extractor):
     result = extractor.extract_method(code, start_line=2, end_line=3, function_name="calc_stats")
     assert result is not None
     assert "calc_stats(" in result.call_statement
+
+def test_extract_variable(extractor):
+    """Test extracting an expression into a variable."""
+    code = (
+        "x = 10\n"
+        "result = x + 20\n"
+        "print(result)\n"
+    )
+    # Extract "x + 20" from line 2 (columns 9 to 15)
+    result = extractor.extract_variable(code, start_line=2, end_line=2, start_col=9, end_col=15, var_name="addition")
+    assert result is not None
+    assert result.var_name == "addition"
+    assert "addition = x + 20" in result.assignment_statement
+    assert "result = addition" in result.modified_code
+
+def test_extract_variable_invalid_expression(extractor):
+    """Extraction should fail if the selection is not a valid expression."""
+    code = "if x == 10:\n    pass\n"
+    # Select "if x == 1"
+    result = extractor.extract_variable(code, start_line=1, end_line=1, start_col=0, end_col=10, var_name="invalid")
+    assert result is None
+
+# ── Mover Tests ────────────────────────────────────────
+
+@pytest.fixture
+def mover():
+    return Mover()
+
+def test_move_to_file_success(mover):
+    """Test moving a class to another file."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        source_path = os.path.join(tmpdir, "source.py")
+        target_path = os.path.join(tmpdir, "target.py")
+        
+        source_code = (
+            "import os\n\n"
+            "class MyClass:\n"
+            "    def method(self):\n"
+            "        pass\n\n"
+            "def other_func():\n"
+            "    pass\n"
+        )
+        with open(source_path, 'w') as f:
+            f.write(source_code)
+            
+        result = mover.move_to_file(tmpdir, source_path, target_path, start_line=3, end_line=5)
+        
+        assert result is not None
+        assert result.symbol_name == "MyClass"
+        assert "class MyClass" not in result.source_file_content
+        assert "def other_func" in result.source_file_content
+        assert "class MyClass" in result.target_file_content
+
+def test_move_to_file_invalid_block(mover):
+    """Moving a block that is not a class or function should fail."""
+    with tempfile.TemporaryDirectory() as tmpdir:
+        source_path = os.path.join(tmpdir, "source.py")
+        target_path = os.path.join(tmpdir, "target.py")
+        
+        source_code = "x = 10\ny = 20\n"
+        with open(source_path, 'w') as f:
+            f.write(source_code)
+            
+        result = mover.move_to_file(tmpdir, source_path, target_path, start_line=1, end_line=2)
+        assert result is None
