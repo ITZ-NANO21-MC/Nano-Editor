@@ -27,6 +27,8 @@ from navigation.goto_definition import GotoDefinition, setup_goto_definition_bin
 from ui.rename_dialog import RenameDialog
 from core.refactoring.extractor import Extractor
 from core.refactoring.mover import Mover
+from core.workspace.workspace_manager import WorkspaceManager
+from core.tasks.task_runner import TaskRunner
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
 from core.file_handler import FileHandler
@@ -166,6 +168,12 @@ class App(ctk.CTk, AIHandler, FileHandler):
         # Visual feedback
         self.feedback = VisualFeedback(self)
         
+        # Workspace
+        self.workspace_manager = WorkspaceManager()
+        self.task_runner = TaskRunner(self)
+        if os.getcwd() not in self.workspace_manager.folders:
+            self.workspace_manager.add_folder(os.getcwd())
+        
         # AI components
         self.ai_assistant = AIAssistant()
         self.ai_file_ops = AIFileOperations(os.getcwd())
@@ -247,6 +255,84 @@ class App(ctk.CTk, AIHandler, FileHandler):
         if not self.file_tree_visible:
             self.panel_container.grid()
             self.file_tree_visible = True
+            
+    def show_task_runner(self):
+        """Show a dialog to run workspace tasks."""
+        if not hasattr(self, 'task_runner'):
+            return
+            
+        tasks = self.task_runner.get_task_labels()
+        if not tasks:
+            from tkinter import messagebox
+            messagebox.showinfo("Tasks", "No tasks.json found or no valid tasks defined in current workspace.")
+            return
+            
+        # Create a simple dialog for now (can be upgraded to a Command Palette later)
+        dialog = ctk.CTkToplevel(self)
+        dialog.title("Run Task")
+        dialog.geometry("400x300")
+        dialog.transient(self)
+        
+        # Center dialog
+        x = self.winfo_x() + (self.winfo_width() - 400) // 2
+        y = self.winfo_y() + (self.winfo_height() - 300) // 2
+        dialog.geometry(f"+{x}+{y}")
+        
+        listbox = tk.Listbox(dialog, font=("Segoe UI", 11), bg="#252526", fg="#FFFFFF", selectbackground="#094771")
+        listbox.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        for task in tasks:
+            listbox.insert(tk.END, task)
+            
+        def on_select(event=None):
+            selection = listbox.curselection()
+            if selection:
+                task_label = listbox.get(selection[0])
+                self.task_runner.execute_task(task_label)
+                dialog.destroy()
+                
+        listbox.bind("<Double-1>", on_select)
+        listbox.bind("<Return>", on_select)
+        
+        # Auto select first
+        if tasks:
+            listbox.selection_set(0)
+            listbox.focus_set()
+            
+    def open_folder(self):
+        """Open a single directory as the workspace."""
+        folder_path = filedialog.askdirectory()
+        if folder_path:
+            self.workspace_manager.clear()
+            self.workspace_manager.add_folder(folder_path)
+            
+    def add_folder_to_workspace(self):
+        """Add a directory to the current workspace roots."""
+        folder_path = filedialog.askdirectory()
+        if folder_path:
+            self.workspace_manager.add_folder(folder_path)
+            
+    def open_workspace(self):
+        """Load a .nano-workspace file."""
+        file_path = filedialog.askopenfilename(
+            defaultextension=".nano-workspace", 
+            filetypes=[("Workspace Config", "*.nano-workspace")]
+        )
+        if file_path:
+            self.workspace_manager.load_workspace(file_path)
+            
+    def save_workspace_as(self):
+        """Save workspace to a .nano-workspace file."""
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".nano-workspace", 
+            filetypes=[("Workspace Config", "*.nano-workspace")]
+        )
+        if file_path:
+            self.workspace_manager.save_workspace(file_path)
+            
+    def close_workspace(self):
+        """Clear the current workspace cleanly."""
+        self.workspace_manager.clear()
     
     def show_source_control(self):
         """Show source control panel."""

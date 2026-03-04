@@ -126,3 +126,75 @@ class GitManager:
         if success:
             return output
         return ""
+
+    def get_branches(self) -> List[str]:
+        """Get a list of all local branches."""
+        success, output = self._run_git_command(['branch', '--format=%(refname:short)'])
+        if success and output:
+            return [b.strip() for b in output.split('\n') if b.strip()]
+        return []
+
+    def create_branch(self, name: str) -> bool:
+        """Create a new branch."""
+        success, output = self._run_git_command(['branch', name])
+        if not success:
+            logger.error(f"Failed to create branch {name}: {output}")
+        return success
+
+    def checkout_branch(self, name: str) -> bool:
+        """Switch to an existing branch."""
+        success, output = self._run_git_command(['checkout', name])
+        if not success:
+            logger.error(f"Failed to checkout branch {name}: {output}")
+        return success
+
+    def delete_branch(self, name: str, force: bool = False) -> bool:
+        """Delete a branch.
+        
+        Args:
+            name: Name of branch to delete
+            force: Use -D (force) instead of -d
+        """
+        flag = '-D' if force else '-d'
+        success, output = self._run_git_command(['branch', flag, name])
+        if not success:
+            logger.error(f"Failed to delete branch {name}: {output}")
+        return success
+
+    def merge_branch(self, name: str) -> Tuple[bool, str]:
+        """Merge a branch into the current one.
+        
+        Returns:
+            Tuple of (success, output message). Success is False if there are conflicts.
+        """
+        try:
+            full_cmd = ['git', 'merge', name]
+            result = subprocess.run(
+                full_cmd,
+                cwd=self.repo_path,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            # git merge outputs CONFLICT info to stdout even when failing
+            combined_output = (result.stdout + result.stderr).strip()
+            
+            if result.returncode == 0:
+                return True, "Merge successful."
+            else:
+                if "CONFLICT" in combined_output:
+                    return False, "Merge conflict detected. Please resolve conflicts."
+                logger.error(f"Failed to merge {name}: {combined_output}")
+                return False, combined_output
+        except FileNotFoundError:
+            return False, "Git executable not found."
+        except Exception as e:
+            return False, str(e)
+
+
+    def get_conflicted_files(self) -> List[str]:
+        """Get a list of files with merge conflicts."""
+        success, output = self._run_git_command(['diff', '--name-only', '--diff-filter=U'])
+        if success and output:
+             return [f.strip() for f in output.split('\n') if f.strip()]
+        return []

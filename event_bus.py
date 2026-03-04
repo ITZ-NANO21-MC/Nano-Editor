@@ -53,6 +53,7 @@ class Events:
     FILE_RENAMED = "file_renamed"
     FILE_DELETED = "file_deleted"
     FOLDER_OPENED = "folder_opened"
+    WORKSPACE_CHANGED = "workspace_changed"
 
 # Global event bus instance
 event_bus = EventBus()

@@ -4,6 +4,8 @@ import tkinter as tk
 from tkinter import messagebox
 from core.git.git_manager import GitManager
 from ui.diff_viewer import DiffViewer
+from ui.branch_dialog import BranchDialog
+from ui.conflict_resolver import ConflictResolver
 from logger import logger
 
 class GitPanel(ctk.CTkFrame):
@@ -33,9 +35,12 @@ class GitPanel(ctk.CTkFrame):
         self.branch_label = ctk.CTkLabel(
             header, text="",
             font=("Segoe UI", 10),
-            text_color=("#007ACC", "#3B8ED0")
+            text_color=("#007ACC", "#3B8ED0"),
+            cursor="hand2"
         )
         self.branch_label.pack(side="right", padx=10, pady=8)
+        self.branch_label.bind("<Button-1>", lambda e: self.show_branch_manager())
+
         
         # Top action buttons
         actions_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -129,25 +134,40 @@ class GitPanel(ctk.CTkFrame):
             row = ctk.CTkFrame(self.changes_scroll, fg_color="transparent", height=24)
             row.pack(fill="x", pady=1)
             
-            # Status badge (M, A, ??, etc)
-            status_color = "#FFCC00" if "M" in item['status'] else ("#00CC44" if "A" in item['status'] else "#999999")
+            is_conflict = "U" in item['status']
+            
+            # Status badge (M, A, UU, etc)
+            if is_conflict:
+                status_color = "#FF5555" # Red for conflict
+                status_text = "C" # C for Conflict
+            else:
+                status_color = "#FFCC00" if "M" in item['status'] else ("#00CC44" if "A" in item['status'] else "#999999")
+                status_text = item['status'].strip().ljust(2)
+                
             badge = ctk.CTkLabel(
-                row, text=item['status'].strip().ljust(2), 
+                row, text=status_text, 
                 width=20, font=("monospace", 10, "bold"), text_color=status_color
             )
             badge.pack(side="left", padx=5)
             
             # File name
             filename = item['file'].split('/')[-1]
-            label = ctk.CTkLabel(
-                row, text=filename, font=("Segoe UI", 11),
-                anchor="w"
-            )
+            label_kwargs = {
+                "text": filename,
+                "font": ("Segoe UI", 11, "bold" if is_conflict else "normal"),
+                "anchor": "w"
+            }
+            if is_conflict:
+                label_kwargs["text_color"] = "#FF5555"
+            label = ctk.CTkLabel(row, **label_kwargs)
             label.pack(side="left", fill="x", expand=True)
             self._add_tooltip(label, item['file'])
             
-            # Bind click to show diff
-            label.bind("<Button-1>", lambda e, f=item['file']: self.show_diff(f))
+            # Bind click to show diff or resolver
+            if is_conflict:
+                label.bind("<Button-1>", lambda e, f=item['file']: self.show_conflict_resolver(f))
+            else:
+                label.bind("<Button-1>", lambda e, f=item['file']: self.show_diff(f))
 
             
             # Plus button to add just this file (optional future enhancement)
@@ -199,6 +219,27 @@ class GitPanel(ctk.CTkFrame):
         viewer = DiffViewer(self.app, filepath, diff)
         # Delay grab_set until the window is fully rendered
         viewer.after(50, lambda: viewer.grab_set() if viewer.winfo_exists() else None)
+
+    def show_branch_manager(self):
+        """Open the BranchManager dialog."""
+        if not self.git_manager.is_git_repo():
+            messagebox.showinfo("Git", "Not a git repository.")
+            return
+            
+        dialog = BranchDialog(self.winfo_toplevel(), self.git_manager, on_branch_changed=self.refresh_status)
+        dialog.transient(self.winfo_toplevel())
+        dialog.grab_set()
+
+    def show_conflict_resolver(self, filepath: str):
+        """Open the ConflictResolver dialog for a file."""
+        resolver = ConflictResolver(self.winfo_toplevel(), self.app, filepath, self.git_manager)
+        resolver.transient(self.winfo_toplevel())
+        
+        # We don't grab_set on resolver, it's basically a window.
+        # It'll destroy itself when done.
+        
+        # When resolver closes, refresh git panel
+        resolver.bind("<Destroy>", lambda e: self.after(100, self.refresh_status), add="+")
 
 
     def _add_tooltip(self, widget, text):

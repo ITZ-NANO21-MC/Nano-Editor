@@ -108,3 +108,63 @@ def test_add_and_commit(temp_git_repo):
     
     # Status should be clean
     assert len(manager.get_status()) == 0
+
+def test_branching(temp_git_repo):
+    """Test branch creation, listing, switching, and deletion."""
+    manager = GitManager(temp_git_repo)
+    
+    # 1. Create a branch
+    assert manager.create_branch("feature-x") is True
+    
+    # 2. List branches
+    branches = manager.get_branches()
+    assert "feature-x" in branches
+    # default branch (main or master) should also be there
+    
+    # 3. Checkout branch
+    assert manager.checkout_branch("feature-x") is True
+    assert manager.get_current_branch() == "feature-x"
+    
+    # Can't delete current branch
+    assert manager.delete_branch("feature-x") is False
+    
+    # Checkout master/main and delete
+    default_branch = manager.get_branches()
+    default_branch.remove("feature-x")
+    assert manager.checkout_branch(default_branch[0]) is True
+    assert manager.delete_branch("feature-x") is True
+    assert "feature-x" not in manager.get_branches()
+
+def test_merge_conflicts(temp_git_repo):
+    """Test merging and getting conflicted files."""
+    manager = GitManager(temp_git_repo)
+    default_branch = manager.get_current_branch()
+    
+    # 1. Create and switch to new branch
+    manager.create_branch("conflict-branch")
+    manager.checkout_branch("conflict-branch")
+    
+    # 2. Modify file in new branch
+    init_file = os.path.join(temp_git_repo, "init.txt")
+    with open(init_file, 'w') as f:
+        f.write("Changed in conflict-branch")
+    manager.add_all()
+    manager.commit("Branch change")
+    
+    # 3. Switch back to default and modify same file
+    manager.checkout_branch(default_branch)
+    with open(init_file, 'w') as f:
+        f.write("Changed in default branch")
+    manager.add_all()
+    manager.commit("Default change")
+    
+    # 4. Attempt merge
+    success, msg = manager.merge_branch("conflict-branch")
+    assert success is False
+    assert "conflict" in msg.lower()
+    
+    # 5. Check for conflicted files
+    conflicted = manager.get_conflicted_files()
+    assert len(conflicted) == 1
+    assert conflicted[0] == "init.txt"
+

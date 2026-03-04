@@ -205,6 +205,7 @@ class SnippetManager:
 ```
 
 #### 8. Workspace Management
+**Estado:** ✅ COMPLETADO
 **Prioridad:** MEDIA
 **Complejidad:** Media
 **Tiempo:** 2 semanas
@@ -262,6 +263,7 @@ class TestRunner:
 - Centralización de prompts y manejo de errores robusto
 - Fix: Autocompletado redundante corregido (v3.9.5)
 - Optimize Code 2.0: Código listo para insertar (v3.9.5)
+- AI Code Completion: Ghost Text en tiempo real (v4.0)
 
 #### 11. Arquitectura Modular (NUEVO v4.0)
 **Estado:** ✅ COMPLETADO (Febrero 2026)
@@ -380,6 +382,7 @@ fs = container.resolve(IFileSystem)
 - [x] Commit/Push/Pull (UI Form)
 - [x] Branch management
 - [x] Diff viewer
+- [x] Merge conflict resolver
 
 #### Semana 8: Refactoring
 - [x] Rename symbol
@@ -391,9 +394,9 @@ fs = container.resolve(IFileSystem)
 **Semanas 9-12**
 
 #### Semana 9: Workspace Management
-- [ ] Multi-folder workspace
-- [ ] Workspace settings
-- [ ] Tasks configuration
+- [x] Multi-folder workspace
+- [x] Workspace settings
+- [x] Tasks configuration
 - [ ] Launch configs
 
 #### Semana 10: Code Snippets
@@ -403,7 +406,7 @@ fs = container.resolve(IFileSystem)
 - [ ] VSCode import
 
 #### Semana 11: AI Enhancements
-- [ ] AI code completion
+- [x] AI code completion
 - [ ] AI chat contextual
 - [ ] Code review automático
 - [ ] Bug detection
@@ -645,7 +648,7 @@ jobs:
 ### Must Have (Bloqueantes)
 - ✅ Plugin system funcional
 - ✅ Debugging básico (Python)
-- ✅ Git integration completo
+- ✅ Git integration completo (Branches & Conflicts)
 - ✅ Performance optimizations
 - ✅ 80%+ test coverage
 - ✅ Documentación completa
@@ -655,7 +658,7 @@ jobs:
 - ⚠️ Refactoring avanzado
 - ⚠️ AI enhancements
 - ⚠️ Testing integration
-- ⚠️ Workspace management
+- ✅ Workspace management
 
 ### Nice to Have (Opcionales)
 - 💡 Mobile app

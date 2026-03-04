@@ -78,12 +78,18 @@ class VSCodeFileTree(ctk.CTkFrame):
         self.tree.bind("<Double-1>", self.on_double_click)
         self.tree.bind("<Button-1>", self.on_click)
         
-        # Load default path
-        try:
-            default_path = os.getcwd()
-            self.load_directory(default_path)
-        except (OSError, PermissionError):
-            pass
+        # Subscribe to workspace changes
+        event_bus.subscribe(Events.WORKSPACE_CHANGED, self.on_workspace_changed)
+        
+        # Load initial workspace
+        if hasattr(self.app, 'workspace_manager') and self.app.workspace_manager.folders:
+            self.on_workspace_changed(self.app.workspace_manager.folders)
+        else:
+            try:
+                default_path = os.getcwd()
+                self.load_directory(default_path)
+            except (OSError, PermissionError):
+                pass
 
     def _create_tree_icons(self):
         """Creates PhotoImages for the treeview."""
@@ -191,35 +197,57 @@ class VSCodeFileTree(ctk.CTkFrame):
         if self.expanded:
             for item in self.tree.get_children():
                 self.tree.item(item, open=False)
-            self.project_btn.configure(text=f"▶ {os.path.basename(self.current_path)}")
+                # Ensure the icon matches closed state
+                values = self.tree.item(item, "values")
+                if values and values[1] == "folder":
+                    self.tree.item(item, image=self.tree_icons["folder"])
+            self.project_btn.configure(text="▶ WORKSPACE")
             self.expanded = False
         else:
             for item in self.tree.get_children():
                 self.tree.item(item, open=True)
-            self.project_btn.configure(text=f"▼ {os.path.basename(self.current_path)}")
+                # Ensure root folders keep open icon if they have children
+                values = self.tree.item(item, "values")
+                if values and values[1] == "folder":
+                    self.tree.item(item, image=self.tree_icons["folder_open"])
+            self.project_btn.configure(text="▼ WORKSPACE")
             self.expanded = True
     
-    def load_directory(self, path: str) -> None:
-        """Load directory into tree."""
-        if not os.path.isdir(path):
-            return
-        
-        self.current_path = path
+    def on_workspace_changed(self, folders: list) -> None:
+        """Handle workspace changes."""
         self.tree.delete(*self.tree.get_children())
+        self.project_btn.configure(text="▼ WORKSPACE")
+        self.expanded = True
         
-        project_name = os.path.basename(path) or path
-        self.project_btn.configure(text=f"▼ {project_name}")
+        if not folders:
+            self.current_path = None
+            return
+            
+        self.current_path = folders[0] # Keep a primary path for fallbacks
         
-        
-        self._populate_tree("", path)
-        event_bus.emit(Events.FOLDER_OPENED, path)
-        
-        # BUG-5 Fix: Sync Git repo path
-        if hasattr(self, 'app') and hasattr(self.app, 'source_panel'):
-            self.app.source_panel.update_repo_path(path)
-        
-    
-    
+        for folder in folders:
+            project_name = os.path.basename(folder) or folder
+            node = self.tree.insert(
+                "", "end",
+                text=f" {project_name}",
+                image=self.tree_icons["folder_open"],
+                values=[folder, "folder"],
+                open=True
+            )
+            self._populate_tree(node, folder)
+            event_bus.emit(Events.FOLDER_OPENED, folder)
+            
+            # Sync Git repo path with primary workspace folder
+            if folder == folders[0] and hasattr(self, 'app') and hasattr(self.app, 'source_panel'):
+                self.app.source_panel.update_repo_path(folder)
+
+    def load_directory(self, path: str) -> None:
+        """Legacy compatibility: load a single directory replacing the workspace."""
+        if hasattr(self.app, 'workspace_manager'):
+            self.app.workspace_manager.clear()
+            self.app.workspace_manager.add_folder(path)
+        else:
+            self.on_workspace_changed([path])
     def on_open(self, event: tk.Event) -> None:
         """Handle folder expansion."""
         try:
@@ -276,9 +304,12 @@ class VSCodeFileTree(ctk.CTkFrame):
             logger.error(f"Error in on_double_click: {e}")
     
     def refresh(self) -> None:
-        """Refresh current directory."""
-        if self.current_path:
-            self.load_directory(self.current_path)
+        """Refresh current workspace directories."""
+        if hasattr(self.app, 'workspace_manager'):
+            folders = self.app.workspace_manager.get_folders()
+            self.on_workspace_changed(folders)
+        elif self.current_path:
+            self.on_workspace_changed([self.current_path])
 
 
 # Sections at bottom

@@ -11,12 +11,19 @@ class ModernMenuBar(ctk.CTkFrame):
         
         menus = [
             ("File", [
-                ("New Tab", lambda: app.tab_manager.new_tab()),
-                ("Open", app.open_file),
-                ("Save", app.save_file),
-                ("Save As", app.save_file_as),
+                ("New Tab (Ctrl+N)", lambda: app.tab_manager.new_tab()),
+                ("Open File... (Ctrl+O)", app.open_file),
+                ("Open Folder...", app.open_folder),
                 None,
-                ("Close Tab", lambda: app.tab_manager.close_tab(app.tab_manager.current_tab_index)),
+                ("Add Folder to Workspace...", app.add_folder_to_workspace),
+                ("Open Workspace...", app.open_workspace),
+                ("Save Workspace As...", app.save_workspace_as),
+                ("Close Workspace", app.close_workspace),
+                None,
+                ("Save (Ctrl+S)", app.save_file),
+                ("Save As...", app.save_file_as),
+                None,
+                ("Close Tab (Ctrl+W)", lambda: app.tab_manager.close_tab(app.tab_manager.current_tab_index)),
                 None,
                 ("Exit", app.quit)
             ]),
@@ -46,6 +53,8 @@ class ModernMenuBar(ctk.CTkFrame):
                 ("Find References", app.find_references)
             ]),
             ("Run", [
+                ("Run Task...", app.show_task_runner),
+                None,
                 ("Run in Terminal", app.run_current_file),
                 ("Clear Terminal", lambda: app.terminal.clear_terminal())
             ]),

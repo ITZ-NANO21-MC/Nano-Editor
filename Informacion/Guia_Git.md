@@ -11,12 +11,12 @@ NanoEditor incluye un cliente de Git integrado para gestionar versiones de tu c�
     - `??` (Untracked): Archivo no rastreado.
 - [x] **Diff Viewer:** Ver exactamente qué líneas han cambiado con colores (Rojo/Verde) y estadísticas (+ / -).
 - [x] **Commit Directo:** Escribir mensaje y realizar commit con `Ctrl+Enter`. Por defecto realiza `git add .` automáticamente.
+- [x] **Gestión de Ramas:** Crear, cambiar y eliminar ramas desde el diálogo integrado (clic en el nombre de la rama).
+- [x] **Conflict Resolver:** Interfaz visual para resolver conflictos de mezcla bloque por bloque.
 
 ## 🛠️ Próximos Pasos (Pendiente)
 - [ ] **Cuentas y Remotos:** Botones directos para configurar remotos.
 - [ ] **Push / Pull Automático:** Botones en la UI para sincronizar con GitHub (Requiere gestión de credenciales).
-- [ ] **Gestión de Ramas:** Crear y cambiar ramas desde un menú gráfico.
-- [ ] **Conflict Resolver:** Interfaz para resolver conflictos de mezcla.
 
 ## 📖 Instrucciones de Uso
 1. Abre el panel de **Source Control** (ícono de ramas).

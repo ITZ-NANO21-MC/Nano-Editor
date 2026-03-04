@@ -10,9 +10,9 @@ NanoEditor integra una IA avanzada con capacidades agénticas que puede razonar 
 - [x] **Contexto Global:** Conocimiento automático de la estructura del proyecto y archivos clave.
 - [x] **Limpieza Automática:** El código generado se limpia de etiquetas Markdown para inserción directa.
 - [x] **Optimización de Código:** Comando dedicado para mejorar el fragmento seleccionado.
+- [x] **AI Code Completion:** Sugerencias de código en línea tipo "Ghost Text" mientras escribes.
 
 ## 🛠️ Próximos Pasos (Pendiente)
-- [ ] **AI Code Completion:** Sugerencias de código en línea tipo "Ghost Text" mientras escribes.
 - [ ] **Auto-Bug Detection:** Escaneo en segundo plano para detectar errores potenciales con IA.
 - [ ] **Explicación de Errores Dinámica:** La IA explica los errores de la terminal automáticamente.
 
