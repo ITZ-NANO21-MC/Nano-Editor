@@ -333,6 +333,11 @@ class App(ctk.CTk, AIHandler, FileHandler):
     def close_workspace(self):
         """Clear the current workspace cleanly."""
         self.workspace_manager.clear()
+        # Reset terminal working directory to home
+        if hasattr(self, 'terminal'):
+            import os
+            self.terminal.cwd = os.path.expanduser("~")
+            self.terminal._write_prompt()
     
     def show_source_control(self):
         """Show source control panel."""

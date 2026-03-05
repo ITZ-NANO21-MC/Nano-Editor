@@ -74,9 +74,11 @@ class TaskRunner:
         # Ensure terminal is visible
         if hasattr(self.app, 'terminal'):
             self.app.terminal.grid()
-            # Send command to terminal
-            cd_cmd = f"cd {shlex.quote(cwd)} && " if cwd else ""
-            self.app.terminal.send_input(f"{cd_cmd}{command}")
+            # Set working directory directly on the terminal
+            if cwd and os.path.isdir(cwd):
+                self.app.terminal.cwd = cwd
+            # Execute the command
+            self.app.terminal._execute_command(command)
             return True
         return False
         
