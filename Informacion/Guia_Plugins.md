@@ -2,15 +2,15 @@
 
 Extensibilidad para añadir nuevas funciones a NanoEditor.
 
-## 🚀 Funcionalidades Implementadas
-- [x] **Arquitectura Modular:** El editor está preparado para cargar módulos externos (v4.0 Ready).
-- [x] **Separación de Concern:** Los módulos (Terminal, AI, Editor) están desacoplados.
+## 🏗️ Base Arquitectónica
+El editor está construido con una separación clara de módulos (Terminal, AI, Editor, Git), lo que facilita futuras extensiones. Sin embargo, **aún no existe un sistema formal de plugins**.
 
 ## 🛠️ Próximos Pasos (Pendiente)
 - [ ] **Plugin API:** Interfaz documentada para que desarrolladores creen extensiones.
+- [ ] **Plugin Loader:** Cargador dinámico que descubra y registre módulos externos.
 - [ ] **Marketplace Integrado:** Ver, instalar y actualizar plugins desde el editor.
 - [ ] **Hot-Reload:** Cargar y descargar plugins sin reiniciar el editor.
 - [ ] **Temas de Terceros:** Soporte para cargar archivos `.json` de temas VSCode.
 
 ## 📖 Instrucciones de Uso
-*(Esta funcionalidad está en fase de desarrollo arquitectónico. En versiones futuras aparecerá un panel de "Extensions" en la barra lateral).*
+*(Esta funcionalidad está en fase de diseño arquitectónico. En versiones futuras aparecerá un panel de "Extensions" funcional en la barra lateral).*

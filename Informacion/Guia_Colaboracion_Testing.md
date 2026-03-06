@@ -3,7 +3,7 @@
 Funcionalidades avanzadas para equipos y control de calidad.
 
 ## 🚀 Funcionalidades Implementadas (Estructura)
-- [x] **Suite de Tests Automatizada:** Más de 70 tests unitarios aseguran la estabilidad del core.
+- [x] **Suite de Tests Automatizada:** Más de 114 tests unitarios aseguran la estabilidad del core.
 - [x] **Event Bus:** Sistema de eventos para sincronización interna del editor.
 
 ## 🛠️ Próximos Pasos (Pendiente)
