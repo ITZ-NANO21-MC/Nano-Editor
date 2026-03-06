@@ -26,6 +26,7 @@ class AIAgent:
         self, 
         user_goal: str, 
         project_context: str = "", 
+        workspace_root: str = "",
         callback: Optional[Callable[[str, Optional[str]], None]] = None,
         approval_callback: Optional[Callable[[str, Dict[str, Any]], bool]] = None
     ):
@@ -42,6 +43,12 @@ class AIAgent:
             approval_callback: Function called when a tool needs user approval. Returns True if approved.
         """
         self.history = []
+        
+        # Set tools CWD scope
+        if workspace_root:
+            self.tools.workspace_root = workspace_root
+        else:
+            self.tools.workspace_root = os.getcwd()
         
         # 1. System Prompt
         system_prompt = ai_prompts.get_agent_system_prompt(project_context)

@@ -15,6 +15,7 @@ class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, Callable] = {}
         self._schemas: List[Dict[str, Any]] = []
+        self.workspace_root: str = os.getcwd()
         
         # Register basic tools
         self.register_tool(
@@ -136,9 +137,9 @@ class ToolRegistry:
     # --- Tool Implementations ---
 
     def _resolve_path(self, path: str) -> str:
-        """Resolve relative paths to absolute using CWD."""
+        """Resolve relative paths to absolute using workspace_root instead of CWD."""
         if not os.path.isabs(path):
-            return os.path.abspath(path)
+            return os.path.abspath(os.path.join(self.workspace_root, path))
         return path
 
     def fs_read_file(self, path: str) -> str:

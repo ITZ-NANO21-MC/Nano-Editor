@@ -93,23 +93,31 @@ class AgentPanel(customtkinter.CTkFrame):
 
         # Get context
         project_context = ""
-        if self.app and hasattr(self.app, '_get_project_context'):
-             project_context = self.app._get_project_context()
+        workspace_root = ""
+        if self.app:
+            if hasattr(self.app, '_get_project_context'):
+                project_context = self.app._get_project_context()
+            if hasattr(self.app, 'workspace_manager'):
+                if self.app.workspace_manager.folders:
+                    workspace_root = self.app.workspace_manager.folders[0]
+            elif hasattr(self.app, 'file_tree') and self.app.file_tree.current_path:
+                workspace_root = self.app.file_tree.current_path
 
         # Run in thread
         self.thread = threading.Thread(
             target=self._run_agent_thread,
-            args=(goal, project_context),
+            args=(goal, project_context, workspace_root),
             daemon=True
         )
         self.thread.start()
 
-    def _run_agent_thread(self, goal, context):
+    def _run_agent_thread(self, goal, context, workspace_root):
         """Worker thread for agent."""
         try:
             self.agent.start_task(
                 user_goal=goal,
                 project_context=context,
+                workspace_root=workspace_root,
                 callback=self._agent_callback,
                 approval_callback=self._agent_approval_callback
             )
