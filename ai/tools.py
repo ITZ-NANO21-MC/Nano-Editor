@@ -31,15 +31,44 @@ class ToolRegistry:
         )
         
         self.register_tool(
-            name="fs_list_dir",
-            func=self.fs_list_dir,
-            description="List contents of a directory.",
+            name="list_dir",
+            func=self.list_dir,
+            description="List contents of a directory. Returns both files and subdirectories.",
             parameters={
                 "type": "object",
                 "properties": {
                     "path": {"type": "string", "description": "Absolute path to the directory"}
                 },
                 "required": ["path"]
+            }
+        )
+        
+        self.register_tool(
+            name="grep_search",
+            func=self.grep_search,
+            description="Search for a text pattern or regex within a directory. Useful for finding function definitions or usages.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "directory": {"type": "string", "description": "Absolute path to search within"},
+                    "query": {"type": "string", "description": "Text or regex pattern to search for"}
+                },
+                "required": ["directory", "query"]
+            }
+        )
+        
+        self.register_tool(
+            name="replace_file_content",
+            func=self.replace_file_content,
+            description="Replace a specific block of text in a file with new content. The target text must exactly match the file's content.",
+            parameters={
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string", "description": "Absolute path to the file"},
+                    "target_text": {"type": "string", "description": "Exact text block to replace. Must include exact spacing."},
+                    "replacement_text": {"type": "string", "description": "New text to insert"}
+                },
+                "required": ["path", "target_text", "replacement_text"]
             }
         )
         
@@ -122,7 +151,7 @@ class ToolRegistry:
         except Exception as e:
             return f"❌ Error reading file: {e}"
 
-    def fs_list_dir(self, path: str) -> str:
+    def list_dir(self, path: str) -> str:
         try:
             path = self._resolve_path(path)
             if not os.path.exists(path):
@@ -137,6 +166,79 @@ class ToolRegistry:
             return "\n".join(output)
         except Exception as e:
             return f"❌ Error listing directory: {e}"
+
+    def grep_search(self, directory: str, query: str) -> str:
+        try:
+            directory = self._resolve_path(directory)
+            if not os.path.isdir(directory):
+                return f"❌ Error: Not a valid directory: {directory}"
+            
+            # Simple python-based recursive search
+            results = []
+            import re
+            pattern = re.compile(query)
+            
+            for root, _, files in os.walk(directory):
+                # Ignore common hidden/binary folders
+                if any(x in root for x in [".git", "__pycache__", "venv", "env", "node_modules"]):
+                    continue
+                    
+                for file in files:
+                    if file.endswith((".pyc", ".pyo", ".pyd", ".so", ".dll", ".exe", ".png", ".jpg")):
+                        continue
+                        
+                    file_path = os.path.join(root, file)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            for i, line in enumerate(f, 1):
+                                if pattern.search(line) or query in line:
+                                    rel_path = os.path.relpath(file_path, directory)
+                                    results.append(f"{rel_path}:{i}:{line.strip()}")
+                                    if len(results) >= 50:  # Cap at 50 to avoid flooding
+                                        results.append("... (more results truncated) ...")
+                                        return "\n".join(results)
+                    except UnicodeDecodeError:
+                        pass # binary file
+                    except Exception:
+                        pass
+                        
+            if not results:
+                return "No matches found."
+            return "\n".join(results)
+        except Exception as e:
+            return f"❌ Error performing search: {e}"
+
+    def replace_file_content(self, path: str, target_text: str, replacement_text: str) -> str:
+        try:
+            path = self._resolve_path(path)
+            if not os.path.exists(path):
+                return f"❌ Error: File not found: {path}"
+                
+            with open(path, 'r', encoding='utf-8') as f:
+                content = f.read()
+                
+            if target_text not in content:
+                # Try handling newline differences (CRLF vs LF)
+                normalized_content = content.replace('\\r\\n', '\\n')
+                normalized_target = target_text.replace('\\r\\n', '\\n')
+                
+                if normalized_target not in normalized_content:
+                    return "❌ Error: target_text exactly as provided was not found in the file. Ensure exact spacing and indentation."
+                else:
+                    target_text = normalized_target
+                    content = normalized_content
+                    
+            if content.count(target_text) > 1:
+                 return "❌ Error: target_text appears multiple times. Provide more context to make it unique."
+                
+            new_content = content.replace(target_text, replacement_text)
+            
+            with open(path, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+                
+            return f"✅ Block replaced successfully in {path}"
+        except Exception as e:
+            return f"❌ Error replacing content: {e}"
 
     def fs_write_file(self, path: str, content: str) -> str:
         try:
