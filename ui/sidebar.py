@@ -359,24 +359,40 @@ class PanelsSettingsWindow(SettingsWindowBase):
 
 
 class AIModelSettingsWindow(SettingsWindowBase):
-    """AI provider and model settings dialog."""
+    """AI provider and model settings dialog with API key management."""
+    
+    # Map provider display names to their .env key names
+    PROVIDER_KEY_MAP = {
+        "Gemini": "GEMINI_API_KEY",
+        "OpenAI": "OPENAI_API_KEY",
+        "Anthropic": "ANTHROPIC_API_KEY",
+        "DeepSeek": "DEEPSEEK_API_KEY",
+        "Groq": "GROQ_API_KEY",
+        "Ollama": "OLLAMA_API_BASE"
+    }
+    
     def __init__(self, master, app):
-        super().__init__(master, "Configuración de IA", height=400)
+        super().__init__(master, "Configuración de IA", height=520)
         self.app = app
         self.providers = app.settings_panel.providers
         
+        from config import config
+        self.config = config
+        
+        # --- Provider ---
         ctk.CTkLabel(self.content_frame, text="Proveedor de IA", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(10, 5))
         
         self.provider_var = app.settings_panel.provider_var
         self.provider_menu = ctk.CTkComboBox(
             self.content_frame, values=list(self.providers.keys()),
             variable=self.provider_var,
-            command=self.update_provider_models,
+            command=self.on_provider_changed,
             state="readonly"
         )
         self.provider_menu.pack(fill="x", pady=5)
 
-        ctk.CTkLabel(self.content_frame, text="Modelo de IA", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(20, 5))
+        # --- Model ---
+        ctk.CTkLabel(self.content_frame, text="Modelo de IA", font=("Segoe UI", 12, "bold")).pack(anchor="w", pady=(15, 5))
         
         self.ai_model_var = app.settings_panel.ai_model_var
         self.ai_model_menu = ctk.CTkComboBox(
@@ -387,11 +403,105 @@ class AIModelSettingsWindow(SettingsWindowBase):
         )
         self.ai_model_menu.pack(fill="x", pady=5)
 
-    def update_provider_models(self, provider):
+        # --- API Key Section ---
+        self.api_key_label = ctk.CTkLabel(self.content_frame, text="API Key", font=("Segoe UI", 12, "bold"))
+        self.api_key_label.pack(anchor="w", pady=(15, 5))
+        
+        self.api_key_var = ctk.StringVar()
+        self.api_key_entry = ctk.CTkEntry(
+            self.content_frame, textvariable=self.api_key_var,
+            placeholder_text="Ingresa tu API Key...",
+            show="•", height=32, font=("Consolas", 11)
+        )
+        self.api_key_entry.pack(fill="x", pady=5)
+        
+        # Show/Hide toggle + Save button
+        key_actions = ctk.CTkFrame(self.content_frame, fg_color="transparent")
+        key_actions.pack(fill="x", pady=5)
+        
+        self.show_key_var = tk.BooleanVar(value=False)
+        self.show_key_check = ctk.CTkCheckBox(
+            key_actions, text="Mostrar", variable=self.show_key_var,
+            command=self._toggle_key_visibility, width=80
+        )
+        self.show_key_check.pack(side="left")
+        
+        self.save_key_btn = ctk.CTkButton(
+            key_actions, text="💾 Guardar API Key", width=140,
+            command=self._save_api_key
+        )
+        self.save_key_btn.pack(side="right")
+        
+        # Status indicator
+        self.key_status_label = ctk.CTkLabel(
+            self.content_frame, text="", font=("Segoe UI", 10)
+        )
+        self.key_status_label.pack(anchor="w", pady=(2, 0))
+        
+        # Load initial state
+        self._load_api_key_for_provider(self.provider_var.get())
+
+    def on_provider_changed(self, provider):
+        """Handle provider change: update models and API key field."""
         self.app.settings_panel.update_provider_models(provider)
-        # Update our local menu values
         models = self.providers.get(provider, [])
         self.ai_model_menu.configure(values=models)
+        self._load_api_key_for_provider(provider)
+
+    def _load_api_key_for_provider(self, provider):
+        """Load the stored API key for the given provider into the entry."""
+        env_key = self.PROVIDER_KEY_MAP.get(provider, "")
+        
+        if provider == "Ollama":
+            self.api_key_label.configure(text="Ollama API Base URL")
+            self.api_key_entry.configure(placeholder_text="http://localhost:11434", show="")
+        else:
+            self.api_key_label.configure(text=f"API Key ({provider})")
+            self.api_key_entry.configure(placeholder_text="Ingresa tu API Key...")
+            if not self.show_key_var.get():
+                self.api_key_entry.configure(show="•")
+            else:
+                self.api_key_entry.configure(show="")
+        
+        stored_value = self.config.get(env_key, "") if env_key else ""
+        self.api_key_var.set(stored_value or "")
+        
+        # Update status
+        if stored_value:
+            self.key_status_label.configure(text=f"✅ {env_key} configurada", text_color="#00CC44")
+        else:
+            self.key_status_label.configure(text=f"⚠️ {env_key} no configurada", text_color="#FFCC00")
+
+    def _toggle_key_visibility(self):
+        provider = self.provider_var.get()
+        if provider == "Ollama":
+            self.api_key_entry.configure(show="")
+        elif self.show_key_var.get():
+            self.api_key_entry.configure(show="")
+        else:
+            self.api_key_entry.configure(show="•")
+
+    def _save_api_key(self):
+        """Save the API key for the current provider to .env."""
+        provider = self.provider_var.get()
+        env_key = self.PROVIDER_KEY_MAP.get(provider, "")
+        value = self.api_key_var.get().strip()
+        
+        if not env_key:
+            return
+            
+        if not value:
+            from tkinter import messagebox
+            messagebox.showwarning("API Key", f"Ingresa una API Key para {provider}.", parent=self)
+            return
+        
+        self.config.set(env_key, value)
+        if self.config.save():
+            self.key_status_label.configure(text=f"✅ {env_key} guardada correctamente", text_color="#00CC44")
+            if hasattr(self.app, 'feedback'):
+                self.app.feedback.show_success(f"API Key de {provider} guardada")
+        else:
+            self.key_status_label.configure(text=f"❌ Error al guardar {env_key}", text_color="#FF5555")
 
     def update_ai_model(self, choice):
         self.app.settings_panel.update_ai_model(choice)

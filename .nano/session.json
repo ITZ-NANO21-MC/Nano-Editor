@@ -1,0 +1,20 @@
+{
+  "open_files": [
+    {
+      "path": "/home/nano/Documentos/Nano-editor/Nano-Editor/list_models.py",
+      "cursor": "1.0",
+      "scroll": 0.0,
+      "active": true
+    }
+  ],
+  "ui": {
+    "font_size": 13,
+    "syntax_theme": "arduino",
+    "show_terminal": true,
+    "show_ai": true,
+    "provider": "Groq",
+    "model": "llama-3.1-70b-versatile",
+    "sidebar_view": "settings",
+    "window_geometry": "1366x699+0+0"
+  }
+}

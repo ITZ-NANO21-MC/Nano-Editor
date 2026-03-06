@@ -5,7 +5,7 @@ Organización y configuración personalizada para tus proyectos.
 ## 🚀 Funcionalidades Implementadas
 - [x] **Explorador de Archivos:** Vista en árbol de tu proyecto actual.
 - [x] **Detección de Raíz:** Identifica automáticamente la carpeta raíz para comandos y Git.
-- [x] **Configuración Persistente:** Se guarda el estado de los paneles y últimos archivos abiertos.
+- [x] **Configuración Persistente:** Al cerrar, se guarda la sesión completa (archivos abiertos, posición del cursor, tamaño de fuente, tema de sintaxis, visibilidad de paneles) en `.nano/session.json`. Al abrir, se restaura automáticamente.
 - [x] **Multi-folder Workspaces:** Abrir varias carpetas independientes en la misma sesión.
 - [x] **Task Runner (`tasks.json`):** Configurar comandos personalizados para "Build", "Deploy", etc.
 

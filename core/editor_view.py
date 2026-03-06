@@ -29,6 +29,7 @@ from core.refactoring.extractor import Extractor
 from core.refactoring.mover import Mover
 from core.workspace.workspace_manager import WorkspaceManager
 from core.tasks.task_runner import TaskRunner
+from core.session_manager import SessionManager
 from ai.utils import process_ai_code_output
 from ai.handler import AIHandler
 from core.file_handler import FileHandler
@@ -63,6 +64,11 @@ class App(ctk.CTk, AIHandler, FileHandler):
         
         # 4. Bind Events
         self._init_bindings()
+        
+        # 5. Session Management
+        self.session_manager = SessionManager(self)
+        self.after(500, self._restore_session)  # Delay to let UI render
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _setup_ui(self):
         """Setup main window layout and containers."""
@@ -303,8 +309,14 @@ class App(ctk.CTk, AIHandler, FileHandler):
         """Open a single directory as the workspace."""
         folder_path = filedialog.askdirectory()
         if folder_path:
+            # Save current session before switching
+            if hasattr(self, 'session_manager'):
+                self.session_manager.save_session()
             self.workspace_manager.clear()
             self.workspace_manager.add_folder(folder_path)
+            # Restore session for the new workspace
+            if hasattr(self, 'session_manager'):
+                self.after(300, lambda: self.session_manager.restore_session(initial=False))
             
     def add_folder_to_workspace(self):
         """Add a directory to the current workspace roots."""
@@ -332,6 +344,9 @@ class App(ctk.CTk, AIHandler, FileHandler):
             
     def close_workspace(self):
         """Clear the current workspace cleanly."""
+        # Save current session before closing
+        if hasattr(self, 'session_manager'):
+            self.session_manager.save_session()
         self.workspace_manager.clear()
         # Reset terminal working directory to home
         if hasattr(self, 'terminal'):
@@ -933,6 +948,21 @@ class App(ctk.CTk, AIHandler, FileHandler):
             self.tab_manager.text_area.insert(ctk.INSERT, text)
         except tkinter.TclError:
             pass
+
+    def _restore_session(self):
+        """Restore previous session (called after UI is ready)."""
+        try:
+            self.session_manager.restore_session(initial=True)
+        except Exception as e:
+            logger.error(f"Session restore failed: {e}")
+
+    def _on_close(self):
+        """Handle window close: save session and exit."""
+        try:
+            self.session_manager.save_session()
+        except Exception as e:
+            logger.error(f"Session save failed: {e}")
+        self.destroy()
 
 
 
